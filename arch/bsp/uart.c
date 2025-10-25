@@ -1,7 +1,6 @@
 #include <arch/bsp/uart.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <arch/bsp/yellow_led.h>
 
 static const uint32_t UART_BASE_PHYS		   = 0x7E201000;
 static const uint32_t PERIPH_OFFSET 		   = 0x3F000000;
@@ -48,16 +47,4 @@ void uart_puts(const char *s) {
     while (*s) {
         uart_putc(*s++);
     }
-}
-
-void uart_loopback [[noreturn]] (void) {
-
-	uart_puts("=== UART Loopback Demo ===\n");
-	
-	while(true){
-        yellow_off();
-		uart_putc(uart_getc());
-        uart_puts("\n");
-        yellow_on();
-	}
 }
