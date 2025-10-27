@@ -61,15 +61,3 @@ build/
 .dSYM/
 .vscode/
 .idea/
-<<<<<<< HEAD
-.DS_Store
-*.log
-
-# Debug / temporary
-*.dSYM/
-*.pdb
-*.dwo
-.tmp_versions/
-kernel/start.c
-=======
->>>>>>> parent of b671c52 (Update .gitignore to exclude build artifacts)
