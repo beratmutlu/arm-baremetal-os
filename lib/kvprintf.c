@@ -28,14 +28,17 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             continue;
         } else {
             fmt++;
+            bool modified_flag = false;
             bool zero_pad = false;
             if (*fmt == '0') {
                 zero_pad = true;
+                modified_flag = true;
                 fmt++;
             }
             size_t width = 0;
             while (*fmt >= '0' && *fmt <= '9') {
                 width = (width * 10) + (*fmt - '0');
+                modified_flag = true;
                 fmt++;
             }
             char conv = *fmt ? *fmt++ : '\0';
@@ -51,11 +54,19 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'c': {
+                if (modified_flag) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                    break;
+                }
                 int ch = va_arg(ap, int); 
                 emit(out, ctx, (char)ch, &count);
                 break;
             }
             case 's': {
+                if (modified_flag) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                    break;
+                }
                 const char *str = va_arg(ap, const char*);
                 if(!str) {
                     str = "(null)";
@@ -103,6 +114,10 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case '%': {
+                if (modified_flag) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                    break;
+                }
                 emit(out, ctx, '%', &count);
                 break;
             }
