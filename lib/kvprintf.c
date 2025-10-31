@@ -308,10 +308,9 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             case 's': {
                 fmt++;
                 const char *str = va_arg(ap, const char*);
-                if(!str) {
-                    str = "(null)";
+                if(str) {
+                    str_emit(out, ctx, str, &count);
                 }
-                str_emit(out, ctx, str, &count);
                 break;
             }
             case 'p': {
