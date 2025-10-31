@@ -57,8 +57,10 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             };
             switch (conv)
             {
-            case '\0': {  
-                str_emit(out, ctx, "Unknown conversion specifier", &count);    
+            case '\0': {
+                if (modified_flag) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                }
                 break;
             }
             case 'c': {
