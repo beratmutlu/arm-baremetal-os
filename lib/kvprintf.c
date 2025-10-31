@@ -140,11 +140,6 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             case '%': {
                 if (modified_flag) {
                     str_emit(out, ctx, "Unknown conversion specifier", &count);
-                    if (*fmt == 'c' || *fmt == 's' || *fmt == 'i' ||
-                        *fmt == 'u' || *fmt == 'x' || *fmt == 'p') 
-                    {
-                        fmt++; 
-                    }
                     break;
                 }
                 emit(out, ctx, '%', &count);
@@ -152,12 +147,12 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             }
             default: {
                 str_emit(out, ctx, "Unknown conversion specifier", &count);
+                if (*fmt == '%') fmt++;
                 if (*fmt == 'c' || *fmt == 's' || *fmt == 'i' ||
                     *fmt == 'u' || *fmt == 'x' || *fmt == 'p') 
                 {
                     fmt++;
                 }
-                
                 break;
             }
             }
