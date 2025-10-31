@@ -104,7 +104,7 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             default: {
-                str_emit(out, ctx, "Unknown conversion specifier\n", &count);
+                str_emit(out, ctx, "Unknown conversion specifier", &count);
                 break;
             }
             }
