@@ -29,6 +29,7 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
         } else {
             fmt++;
             bool modified_flag = false;
+            bool modified_width = false;
             bool zero_pad = false;
             bool unk = false;
             if (*fmt == '0') {
@@ -42,6 +43,8 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 modified_flag = true;
                 if (width != 8) {
                     unk = true;
+                } else {
+                    modified_width = true;
                 }
                 fmt++;
             }
@@ -82,7 +85,7 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'i': {
-                if (unk) {
+                if (unk || (modified_flag && !modified_width)) {
                     str_emit(out, ctx, "Unknown conversion specifier", &count);
                     break;
                 }
@@ -94,7 +97,7 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'u': {
-                if (unk) {
+                if (unk || (modified_flag && !modified_width)) {
                     str_emit(out, ctx, "Unknown conversion specifier", &count);
                     break;
                 }
@@ -106,7 +109,7 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'x': {
-                if (unk) {
+                if (unk || (modified_flag && !modified_width)) {
                     str_emit(out, ctx, "Unknown conversion specifier", &count);
                     break;
                 }
