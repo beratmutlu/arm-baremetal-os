@@ -11,6 +11,6 @@ static void uart_putc_adapter(char c, void *ctx) {
 void kprintf(const char *fmt, ...){
     va_list ap;
     va_start(ap, fmt);
-    int result = kvprintf(uart_putc_adapter, NULL, fmt, ap);
+    kvprintf(uart_putc_adapter, NULL, fmt, ap);
     va_end(ap);
 }
