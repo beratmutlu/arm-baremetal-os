@@ -8,7 +8,7 @@
 #define PREFIX_DEFAULT false
 
 static inline void emit(kputc_fn out, void *ctx, char c, int *count) {
-    out(c, ctx);
+    out((unsigned char)c, ctx);
     (*count)++;
 }
 
