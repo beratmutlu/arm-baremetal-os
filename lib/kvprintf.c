@@ -30,6 +30,7 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             fmt++;
             bool modified_flag = false;
             bool zero_pad = false;
+            bool unk = false;
             if (*fmt == '0') {
                 zero_pad = true;
                 modified_flag = true;
@@ -39,6 +40,9 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             while (*fmt >= '0' && *fmt <= '9') {
                 width = (width * 10) + (*fmt - '0');
                 modified_flag = true;
+                if (width != 8) {
+                    unk = true;
+                }
                 fmt++;
             }
             char conv = *fmt ? *fmt++ : '\0';
@@ -78,6 +82,10 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'i': {
+                if (unk) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                    break;
+                }
                 int num = va_arg(ap, int);
                 char buf[32];
                 int len = fmt_i32_dec(num, buf, sizeof(buf), spec);
@@ -86,6 +94,10 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'u': {
+                if (unk) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                    break;
+                }
                 unsigned num = va_arg(ap, unsigned);
                 char buf[32];
                 int len = fmt_u32(num, buf, sizeof(buf), spec);
@@ -94,6 +106,10 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'x': {
+                if (unk) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                    break;
+                }
                 unsigned num = va_arg(ap, unsigned);
                 spec.base = BASE_HEX;
                 char buf[32];
@@ -103,6 +119,10 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             case 'p': {
+                if (modified_flag) {
+                    str_emit(out, ctx, "Unknown conversion specifier", &count);
+                    break;
+                }
                 void *p = va_arg(ap, void *);
                 uintptr_t addr = (uintptr_t)p;
 
