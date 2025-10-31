@@ -48,7 +48,6 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
             switch (conv)
             {
             case '\0': {
-                emit(out, ctx, (char)'%', &count);
                 break;
             }
             case 'c': {
