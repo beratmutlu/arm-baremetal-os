@@ -18,7 +18,7 @@ static inline void str_emit(kputc_fn out, void *ctx, const char *str, int *count
         str++;
     }
 }
-
+/*
 int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
     int count = 0;
     while (*fmt) {
@@ -146,6 +146,191 @@ int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
                 break;
             }
             default: {
+                str_emit(out, ctx, "Unknown conversion specifier", &count);
+                break;
+            }
+            }
+        }
+    }
+    return count;
+}
+*/
+
+int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
+    int count = 0;
+    while (*fmt) {
+        if (*fmt != '%') {
+            out(*fmt++, ctx);
+            count++;
+            continue;
+        } else {
+            fmt++;
+            switch (*fmt)
+            {
+            case '\0':{
+                str_emit(out, ctx, "Unknown conversion specifier", &count);
+                break;
+            }
+            case  '0':{
+                fmt++;
+                switch (*fmt)
+                {
+                    case '\0':{
+                        str_emit(out, ctx, "Unknown conversion specifier", &count);
+                        break;
+                    }
+                    case '8': {
+                        fmt++;
+                        switch (*fmt){
+                            case '\0': {
+                                str_emit(out, ctx, "Unknown conversion specifier", &count);
+                                break;
+                            }
+                            case 'i': {
+                                fmt++;
+                                int num = va_arg(ap, int);
+                                char buf[32];
+                                int len = fmt_i32_dec(num, buf, sizeof(buf), (struct fmt_spec){BASE_DECIMAL, 8, false, '0'});
+                                if (len < 0) return -1;
+                                str_emit(out, ctx, buf, &count);
+                                break;
+                            }
+                            case 'u': {
+                                fmt++;
+                                unsigned num = va_arg(ap, unsigned);
+                                char buf[32];
+                                int len = fmt_u32(num, buf, sizeof(buf), (struct fmt_spec){BASE_DECIMAL, 8, false, '0'});
+                                if (len < 0) return -1;
+                                str_emit(out, ctx, buf, &count);
+                                break;
+                            }
+                            case 'x': {
+                                fmt++;
+                                unsigned num = va_arg(ap, unsigned);
+                                char buf[32];
+                                int len = fmt_u32(num, buf, sizeof(buf), (struct fmt_spec){BASE_HEX, 8, false, '0'});
+                                if (len < 0) return -1;
+                                str_emit(out, ctx, buf, &count);
+                                break;
+                            }
+                            default: {
+                                fmt++;
+                                str_emit(out, ctx, "Unknown conversion specifier", &count);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    default: {
+                        fmt++;
+                        str_emit(out, ctx, "Unknown conversion specifier", &count);
+                        break;
+                    }
+                }
+            break;
+        }
+            case '8': {
+                fmt++;
+                switch (*fmt)
+                {
+                    case '\0': {
+                        str_emit(out, ctx, "Unknown conversion specifier", &count);
+                        break;
+                    }
+                    case 'i': {
+                        fmt++;
+                        int num = va_arg(ap, int);
+                        char buf[32];
+                        int len = fmt_i32_dec(num, buf, sizeof(buf), (struct fmt_spec){BASE_DECIMAL, 8, false, ' '});
+                        if (len < 0) return -1;
+                        str_emit(out, ctx, buf, &count);
+                        break;
+                    }
+                    case 'u': {
+                        fmt++;
+                        unsigned num = va_arg(ap, unsigned);
+                        char buf[32];
+                        int len = fmt_u32(num, buf, sizeof(buf), (struct fmt_spec){BASE_DECIMAL, 8, false, ' '});
+                        if (len < 0) return -1;
+                        str_emit(out, ctx, buf, &count);
+                        break;
+                    }
+                    case 'x': {
+                        fmt++;
+                        unsigned num = va_arg(ap, unsigned);
+                        char buf[32];
+                        int len = fmt_u32(num, buf, sizeof(buf), (struct fmt_spec){BASE_HEX, 8, false, ' '});
+                        if (len < 0) return -1;
+                        str_emit(out, ctx, buf, &count);
+                        break;
+                    }
+                    default: {
+                        fmt++;
+                        str_emit(out, ctx, "Unknown conversion specifier", &count);
+                        break;
+                    }
+                }
+                break;
+            }
+            case 'i': {
+                fmt++;
+                int num = va_arg(ap, int);
+                char buf[32];
+                int len = fmt_i32_dec(num, buf, sizeof(buf), (struct fmt_spec){BASE_DECIMAL, 0, false, ' '});
+                if (len < 0) return -1;
+                str_emit(out, ctx, buf, &count);
+                break;
+            }
+            case 'u': {
+                fmt++;
+                unsigned num = va_arg(ap, unsigned);
+                char buf[32];
+                int len = fmt_u32(num, buf, sizeof(buf), (struct fmt_spec){BASE_DECIMAL, 0, false, ' '});
+                if (len < 0) return -1;
+                str_emit(out, ctx, buf, &count);
+                break;
+            }
+            case 'x': {
+                fmt++;
+                unsigned num = va_arg(ap, unsigned);
+                char buf[32];
+                int len = fmt_u32(num, buf, sizeof(buf), (struct fmt_spec){BASE_HEX, 0, false, ' '});
+                if (len < 0) return -1;
+                str_emit(out, ctx, buf, &count);
+                break;
+            }
+            case 'c': {
+                fmt++;
+                int ch = va_arg(ap, int); 
+                emit(out, ctx, (char)ch, &count);
+                break;
+            }
+            case 's': {
+                fmt++;
+                const char *str = va_arg(ap, const char*);
+                if(!str) {
+                    str = "(null)";
+                }
+                str_emit(out, ctx, str, &count);
+                break;
+            }
+            case 'p': {
+                fmt++;
+                void *p = va_arg(ap, void *);
+                uintptr_t addr = (uintptr_t)p;
+                char buf[32];
+                int len = fmt_u32((uint32_t) addr, buf, sizeof(buf), (struct fmt_spec){BASE_HEX, 8, true, '0'});
+                if (len < 0) return -1;
+                str_emit(out, ctx, buf, &count);
+                break;
+            }
+            case '%': {
+                fmt++;
+                emit(out, ctx, '%', &count);
+                break;
+            }
+            default: {
+                fmt++;
                 str_emit(out, ctx, "Unknown conversion specifier", &count);
                 break;
             }
