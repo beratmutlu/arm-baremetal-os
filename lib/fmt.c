@@ -84,22 +84,22 @@ int fmt_i32_dec(int32_t num, /*out*/ char *buf, size_t cap, struct fmt_spec spec
     if (!buf || cap < 2) return -1;
 
     bool neg = (num < 0);
-    int32_t v = num;
+    // int32_t v = num;
     /*
     
     uint32_t mag = neg
                  ? (uint32_t)(-(int64_t)num)
                  : (uint32_t)v;
     */
-   uint32_t mag;
+   uint64_t mag;
    if (neg) {
         if (num == -2147483648) {
             mag = 2147483648u;
         } else {
-            mag = (uint32_t)(-num);
+            mag = (uint64_t)(-num);
         }
     } else {
-        mag = (uint32_t)num;
+        mag = (uint64_t)num;
     }
     char sign_ch = neg
                  ? '-'

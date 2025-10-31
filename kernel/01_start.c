@@ -2,6 +2,7 @@
 #include <kernel/kprintf.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <config.h>
 
 void start_kernel(){
