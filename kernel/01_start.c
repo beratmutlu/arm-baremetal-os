@@ -9,7 +9,7 @@ void start_kernel(){
 	
 	uart_init();
 
-	kprintf("=== Betriebssystem gestartet ===\n");
+	kprintf("=== Betriebssystem gestartet ===");
 	test_kernel();
 		
 	while(true){

@@ -1,9 +1,33 @@
+/**
+ * @file fmt.c
+ * @brief Integer-to-string formatting helpers (implementation).
+ *
+ * Implements the public API declared in @ref fmt.h using
+ * allocation-free, buffer-based routines suitable for kernel use.
+ *
+ * @ingroup fmt_api
+ */
+
+/*
+ * @defgroup fmt_impl Formatting internals (implementation)
+ * @brief Internal helpers: conversion, padding, and field assembly.
+ * @{
+ */
+
+
 #include <lib/fmt.h>
 #include <string.h>
 #include <stdbool.h>
-
+#include <stdint.h>
+/** Maximum digits to represent a 32-bit unsigned integer in decimal (\0). */
 #define MAX_UINT32_DIGITS 32
 
+
+/**
+ * @brief In-place reverse of a substring.
+ * Reverses the range [offset, offset+len) inside @p str.
+ * @ingroup fmt_impl
+ */
 
 static void strrev_range(char *str, size_t offset, size_t len) {
     if (len <= 1) {
@@ -17,6 +41,12 @@ static void strrev_range(char *str, size_t offset, size_t len) {
     }
 }
 
+/**
+ * @brief Convert unsigned magnitude to string in the given base.
+ * Writes digits into @p buf and \0-terminates; returns length (excl. \0) or -1.
+ * Caller ensures @p cap >= 2. Supports BASE_DECIMAL and BASE_HEX.
+ * @ingroup fmt_impl
+ */
 static int utoa_base(uint32_t mag, /*out*/ char* buf, enum fmt_base base, size_t cap){
     if (!buf || cap < 2) {
         return -1;
@@ -36,7 +66,7 @@ static int utoa_base(uint32_t mag, /*out*/ char* buf, enum fmt_base base, size_t
     while (mag != 0) {
         if (len + 1 >= cap) {
             return -1;
-        } // Buffer too small
+        } /* buffer too small */
 
         uint32_t digit = mag % base;
         mag /= base;
@@ -44,13 +74,15 @@ static int utoa_base(uint32_t mag, /*out*/ char* buf, enum fmt_base base, size_t
     }
 
     buf[len] = '\0';
-
-    // Reverse to correct order
     strrev_range(buf, 0, len);
-
     return (int)len;
 }
 
+/**
+ * @brief Emit optional "0x" prefix and sign into a moving pointer.
+ * Advances @p *pp by the number of characters written.
+ * @ingroup fmt_impl
+ */
 static inline void emit_prefix_and_sign(char **pp, int prefix_len, char sign_ch) {
     char *p = *pp;
 
@@ -65,6 +97,11 @@ static inline void emit_prefix_and_sign(char **pp, int prefix_len, char sign_ch)
     *pp = p;
 }
 
+/**
+ * @brief Assemble the final field: padding, prefix/sign, digits, and \0.
+ * Returns total characters written (excl. \0) or -1 on insufficient capacity.
+ * @ingroup fmt_impl
+ */
 static int format_field(uint32_t mag, /*out*/ char* buf, size_t cap, char sign_ch, struct fmt_spec spec){
     if (!buf || cap == 0) {
         return -1;
@@ -86,30 +123,30 @@ static int format_field(uint32_t mag, /*out*/ char* buf, size_t cap, char sign_c
         pad_count = spec.min_width - total_len;
     }
 
-    size_t need = pad_count + prefix_len +total_len + 1;
+    size_t need = pad_count + prefix_len +total_len + 1; /* +1 for \0 */
     if (cap < need) {
         return -1;
     }
 
     char *p = buf;
 
-    // Space padding goes before everything
+    /* Space padding goes before everything */
     if (spec.pad_char == ' ') {
         memset(p, ' ', pad_count);
         p += pad_count;
     }
 
-    // Sign and prefix
-    emit_prefix_and_sign(&p, prefix_len, sign_ch);
+    /* Sign and prefix */
+    emit_prefix_and_sign(&p, (int)prefix_len, sign_ch);
 
-    // Zero padding goes after prefix but before digits
+    /* Zero padding goes after prefix/sign but before digits */
     if (spec.pad_char != ' ') {
         memset(p, '0', pad_count);
         p += pad_count;
     }
     
-    // Copy digits
-    memcpy(p, tmp, dlen); 
+    /* Digits */
+    memcpy(p, tmp, (size_t)dlen); 
     p += dlen;
 
     *p = '\0';
@@ -118,6 +155,7 @@ static int format_field(uint32_t mag, /*out*/ char* buf, size_t cap, char sign_c
 
 }
 
+/** @copydoc fmt_i32_dec */
 int fmt_i32_dec(int32_t num, /*out*/ char *buf, size_t cap, struct fmt_spec spec) {
     if (!buf || cap < 2) {
         return -1;
@@ -142,6 +180,7 @@ int fmt_i32_dec(int32_t num, /*out*/ char *buf, size_t cap, struct fmt_spec spec
     return format_field(mag, buf, cap, sign_ch, spec);
 }
 
+/** @copydoc fmt_u32 */
 int fmt_u32(uint32_t num, /*out*/ char* buf, size_t cap, struct fmt_spec spec) {
     if (!buf || cap == 0) {
         return -1;
@@ -153,3 +192,4 @@ int fmt_u32(uint32_t num, /*out*/ char* buf, size_t cap, struct fmt_spec spec) {
         return format_field(num, buf, cap, 0, spec);
     }
 }
+/** @} */ /* end of fmt_impl */

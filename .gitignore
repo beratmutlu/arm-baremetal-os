@@ -61,3 +61,6 @@ build/
 .dSYM/
 .vscode/
 .idea/
+
+docs/
+Doxyfile
