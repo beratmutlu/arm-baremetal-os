@@ -78,14 +78,15 @@ static int format_field(uint32_t mag, /*out*/ char* buf, size_t cap, char sign_c
 
     const size_t prefix_len = (spec.prefix_0x && spec.base == BASE_HEX) ? 2 : 0;
     const size_t sign_len = (sign_ch != 0) ? 1 : 0;
-    const size_t total_len = (size_t)dlen + sign_len + prefix_len;
+    const size_t total_len = (size_t)dlen + sign_len;
+
 
     size_t pad_count = 0;
     if (spec.min_width > total_len) {
         pad_count = spec.min_width - total_len;
     }
 
-    size_t need = pad_count + total_len + 1;
+    size_t need = pad_count + prefix_len +total_len + 1;
     if (cap < need) {
         return -1;
     }
