@@ -31,7 +31,7 @@ char uart_getc(void);
 /** @brief Blocking write of one byte. */
 void uart_putc(char c);
 
-/** @brief Blocking write of a 0-terminated string. */
+/** @brief Blocking write of a \\0-terminated string. */
 void uart_puts(const char *s);
 
 #endif /* UART_H */

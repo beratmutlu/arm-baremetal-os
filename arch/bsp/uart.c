@@ -3,16 +3,18 @@
  * @file uart.c
  * @brief Simple blocking UART driver built on PL011 BSP.
  *
- * Implements the API defined in uart.h using busy-wait polling.
+ * Implements the API defined in uart.h using busy-wait.
+ * 
+ * @ingroup uart_api
  */
 
 #include <arch/bsp/uart.h>
 #include <arch/bsp/pl011_regs.h>
 #include <stdint.h>
 
-/* Initialize the UART hardware.
- * On QEMU the UART is already configured, so we just clear sticky errors. */
+/** @copydoc uart_init */
 void uart_init(void) {
+    /* On QEMU the UART is already configured, so we just clear sticky errors. */
     PL011->RSR_ECR = 0xFFFFFFFFu;
 }
 

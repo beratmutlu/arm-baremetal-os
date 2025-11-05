@@ -1,7 +1,7 @@
 
 /**
  * @file pl011_regs.h
- * @brief PL011 UART register map and tiny MMIO helpers (BSP-internal).
+ * @brief PL011 UART register map and tiny MMIO helpers.
  *
  * Defines the memory-mapped register block of the ARM PL011 and a few
  * minimal inline helpers for flag checks. Higher-level policy lives in uart.c.
