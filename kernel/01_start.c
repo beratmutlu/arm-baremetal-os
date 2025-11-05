@@ -5,7 +5,8 @@
 #include <stdint.h>
 #include <config.h>
 
-void start_kernel(){
+void start_kernel [[noreturn]] (void);
+void start_kernel [[noreturn]] (){
 	
 	uart_init();
 
