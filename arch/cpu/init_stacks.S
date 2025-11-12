@@ -6,11 +6,11 @@
 .global arm_init_stacks
 .type arm_init_stacks, %function
 
-.extern __stack_svc_end
-.extern __stack_irq_end
-.extern __stack_abt_end
-.extern __stack_und_end
-.extern __stack_sys_end
+.extern svc_stack
+.extern irq_stack
+.extern abt_stack
+.extern und_stack
+.extern sys_stack
 
 arm_init_stacks:
     mrs r0, cpsr
@@ -19,32 +19,38 @@ arm_init_stacks:
     bic r1, r0, #0x1F
     orr r1, r1, #0x13
     msr cpsr_c, r1
-    ldr sp, =__stack_svc_end
+    ldr sp, =svc_stack
+    add sp, sp, #0x1000
     
     bic r1, r0, #0x1F
     orr r1, r1, #0x12
     msr cpsr_c, r1
-    ldr sp, =__stack_irq_end
+    ldr sp, =irq_stack
+    add sp, sp, #0x1000
     
     bic r1, r0, #0x1F
     orr r1, r1, #0x17
     msr cpsr_c, r1
-    ldr sp, =__stack_abt_end
+    ldr sp, =abt_stack
+    add sp, sp, #0x1000
     
     bic r1, r0, #0x1F
     orr r1, r1, #0x1B
     msr cpsr_c, r1
-    ldr sp, =__stack_und_end
+    ldr sp, =und_stack
+    add sp, sp, #0x1000
     
     bic r1, r0, #0x1F
     orr r1, r1, #0x1F
     msr cpsr_c, r1
-    ldr sp, =__stack_sys_end
+    ldr sp, =sys_stack
+    add sp, sp, #0x1000
     
     bic r1, r0, #0x1F
     orr r1, r1, #0x13
     msr cpsr_c, r1
-    ldr sp, =__stack_svc_end
+    ldr sp, =svc_stack
+    add sp, sp, #0x1000
     
     bx lr
 
