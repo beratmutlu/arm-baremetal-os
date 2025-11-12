@@ -18,7 +18,6 @@
     MRS     R1, SPSR
     STR     LR, [SP, #52]
     STR     R1, [SP, #56]
-    CPSID   I
 .endm
 
 .macro EXC_EXIT adjust=4
@@ -36,28 +35,24 @@
 .global und_tramp, svc_tramp, pabt_tramp, dabt_tramp, irq_tramp
 
 und_tramp:
-    CPSID   I
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      und_handler_c
 
 svc_tramp:
-    CPSID   I
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      svc_handler_c
 
 pabt_tramp:
-    CPSID   I
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      pabt_handler_c
 
 dabt_tramp:
-    CPSID   I
     SUB     LR, LR, #8
     EXC_ENTRY
     MOV     R0, SP

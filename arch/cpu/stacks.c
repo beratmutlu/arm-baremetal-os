@@ -1,4 +1,4 @@
-// arch/cpu/stacks.c
+
 #include <stddef.h>
 #include <stdint.h>
 
