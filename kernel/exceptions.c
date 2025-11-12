@@ -9,14 +9,24 @@
 
 bool irq_debug = false;
 
+#define halt()                      \
+	do {                        \
+		asm("cpsid if");    \
+		while (true) {      \
+			asm("wfi"); \
+		}                   \
+	} while (0)
+
 void und_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_UND, frame);
-    while(1){ }
+    uart_putc('\4');
+    halt();
 }
 
 void svc_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_SVC, frame);
-    while(1) {}
+    uart_putc('\4');
+    halt();
 }
 
 void pabt_handler_c[[noreturn]](struct exc_frame *frame) {
