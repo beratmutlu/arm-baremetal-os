@@ -31,12 +31,14 @@ void svc_handler_c[[noreturn]](struct exc_frame *frame) {
 
 void pabt_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_PABT, frame);
-    while(1){}
+    uart_putc('\4');
+    halt();
 }
 
 void dabt_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_DABT, frame);
-    while(1) {}
+    uart_putc('\4');
+    halt();
 }
 
 void irq_handler_c(struct exc_frame *frame) {

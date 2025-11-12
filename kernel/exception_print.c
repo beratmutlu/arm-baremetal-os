@@ -42,7 +42,7 @@ const char* fsr_description(uint32_t fsr) {
 void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     const char *name =
         (kind == EXC_UND)  ? "Undefined" :
-        (kind == EXC_SVC)  ? "SVC" :
+        (kind == EXC_SVC)  ? "Supervisor Call" :
         (kind == EXC_PABT) ? "Prefetch Abort" :
         (kind == EXC_DABT) ? "Data Abort" :
         (kind == EXC_IRQ)  ? "IRQ" : "INVALID";
