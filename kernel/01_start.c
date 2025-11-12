@@ -1,25 +1,75 @@
-#include <arch/bsp/uart.h>
-#include <kernel/kprintf.h>
-#include <stddef.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <arch/cpu/stacks.h>
+#include <arch/cpu/cpu.h>
+#include <arch/bsp/uart.h>
+#include <arch/bsp/systimer.h>
+#include <arch/bsp/irqctrl.h>
+#include <kernel/kprintf.h>
+#include <kernel/exceptions.h>
 #include <config.h>
 
-void start_kernel [[noreturn]] (void);
-void start_kernel [[noreturn]] (){
-	
-	uart_init();
+extern bool irq_debug;
+extern void test_kernel(void);
+extern void register_checker(void);
 
-	kprintf("=== Betriebssystem gestartet ===\n");
-	test_kernel();
-		
-	while(true){
-	    char c = uart_getc();
-		#pragma GCC diagnostic push
-		#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
-		kprintf("Es wurde folgendes Zeichen eingegeben: %c, In Hexadezimal: %x, "
-		    "In Dezimal: %08i, Als Ptr: %p\n",
-			c, (unsigned int)c, (int)c, (void*)c);
-		#pragma GCC diagnostic pop
-	}
+static void subprogram[[noreturn]](void);
+
+
+void start_kernel[[noreturn]](void);
+void start_kernel(void) {
+    uart_init();
+    arm_init_stacks();
+    arm_set_vbar(&vectors_table);
+	uart_irq_enable();
+    systimer_init();
+    irqctrl_enable_uart();
+    irqctrl_enable_timer();
+    
+    cpu_irq_enable();
+    
+    kprintf("=== Betriebssystem gestartet ===\n");
+    test_kernel();
+    
+    while(true) {
+        char c = uart_getc();
+        
+        switch(c) {
+            case 'd':
+                irq_debug = !irq_debug;
+                break;
+            case 'a':
+                do_data_abort();
+                break;
+            case 'p':
+                do_prefetch_abort();
+                break;
+            case 's':
+                do_supervisor_call();
+                break;
+            case 'u':
+                do_undefined_inst();
+                break;
+            case 'c':
+                register_checker();
+                break;
+            case 'e':
+                subprogram();
+                break;
+            default:
+                kprintf("Unknown input: [%c]\n", c);
+                break;
+        }
+    }
+}
+
+static void subprogram(void) {
+    while(true) {
+        char c = uart_getc();
+        for(unsigned int n = 0; n < PRINT_COUNT; n++) {
+            uart_putc(c);
+            volatile unsigned int i = 0;
+            for(; i < BUSY_WAIT_COUNTER; i++) {}
+        }
+    }
 }

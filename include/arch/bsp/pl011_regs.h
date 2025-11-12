@@ -39,7 +39,17 @@
  */
 enum {
     FR_RXFE = 1u << 4,  /**< Receive FIFO empty. */
-    FR_TXFF = 1u << 5   /**< Transmit FIFO full. */    
+    FR_TXFF = 1u << 5   /**< Transmit FIFO full. */   
+};
+
+/**
+ * @enum pl011_interrupt_bits
+ * @brief Bit positions of the UART Interrupt Registers.
+ */
+enum {
+    INT_RX = 1u << 4,   /* RX interrupt. */
+    INT_TX = 1u << 5,   /* TX interrupt. */
+    INT_RT = 1u << 6    /* RX timeout interrupt. */
 };
 
 /**
@@ -49,15 +59,26 @@ enum {
  * Use @ref PL011 to access the device instance.
  */
 struct pl011_regs {
-    volatile uint32_t DR;            /**< Data Register (0x00). */
-    volatile uint32_t RSR_ECR;       /**< Receive Status / Error Clear (0x04). */
-    volatile uint32_t _rsvd0[4];    /**< Reserved (0x08–0x17). */
-    volatile uint32_t FR;            /**< Flag Register (0x18). */   
+    volatile uint32_t DR;            /**<  Data Register                          (0x00). */
+    volatile uint32_t RSR_ECR;       /**<  Receive Status / Error Clear           (0x04). */
+    volatile uint32_t _rsvd0[4];     /**<  Reserved                               (0x08–0x17). */
+    volatile uint32_t FR;            /**<  Flag Register                          (0x18). */
+    volatile uint32_t unused1[7];    /**<  Unused                                 (0x1C-0x34). */
+    volatile uint32_t IMSC;          /**<  Interrupt Mask Set/Clear               (0x38). */
+    volatile uint32_t unused2;       /**<  Unused                                 (0x3C). */
+    volatile uint32_t MIS;           /**<  Masked Interrupt Status                (0x40). */
+    volatile uint32_t ICR;           /**<  Interrupt Clear                        (0x44). */   
 };
 
-_Static_assert(offsetof(struct pl011_regs, DR) == 0x00, "PL011: DR OFFSET");
-_Static_assert(offsetof(struct pl011_regs, RSR_ECR) == 0x4, "PL011: RSR/ECR OFFSET");
-_Static_assert(offsetof(struct pl011_regs, FR) == 0x18, "PL011: FR OFFSET");
+_Static_assert(offsetof(struct pl011_regs, DR)      == 0x00, "PL011: DR OFFSET");
+_Static_assert(offsetof(struct pl011_regs, RSR_ECR) == 0x04, "PL011: RSR/ECR OFFSET");
+_Static_assert(offsetof(struct pl011_regs, FR)      == 0x18, "PL011: FR OFFSET");
+_Static_assert(offsetof(struct pl011_regs, unused1) == 0x1C, "PL011: unused1 offset");
+_Static_assert(offsetof(struct pl011_regs, IMSC)    == 0x38, "PL011: IMSC offset");
+_Static_assert(offsetof(struct pl011_regs, unused2) == 0x3C, "PL011: unused2 offset");
+_Static_assert(offsetof(struct pl011_regs, MIS)     == 0x40, "PL011: MIS offset");
+_Static_assert(offsetof(struct pl011_regs, ICR)     == 0x44, "PL011: ICR offset");
+_Static_assert(sizeof(struct pl011_regs)            == 0x48, "PL011: struct size should reach 0x48");
 
 /**
  * @brief Base pointer to the UART hardware registers.

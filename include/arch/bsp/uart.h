@@ -16,6 +16,8 @@
 #ifndef UART_H
 #define UART_H
 
+#include <stdbool.h>
+
 /** 
  * @brief Initialize UART hardware.
  * Clears error status.
@@ -34,5 +36,8 @@ void uart_putc(char c);
 /** @brief Blocking write of a \\0-terminated string. */
 void uart_puts(const char *s);
 
+void uart_irq_enable(void);
+void uart_irq_service_rx(void);
+bool uart_irq_rx_pending(void);
 #endif /* UART_H */
 /** @} */ /* end of uart_api */
