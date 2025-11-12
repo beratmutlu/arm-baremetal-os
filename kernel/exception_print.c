@@ -47,7 +47,7 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
         (kind == EXC_DABT) ? "Data Abort" :
         (kind == EXC_IRQ)  ? "IRQ" : "INVALID";
 
-    kprintf("############ EXCEPTION ############\n");
+    kprintf("EXCEPTION\n");
     kprintf("%s an Adresse: 0x%08x\n", name, frame->lr);
     
     if (kind == EXC_DABT) {
