@@ -1,6 +1,6 @@
 
 /**
- * @file pl011_regs.h
+ * @file bcm2835_pl011_regs.h
  * @brief PL011 UART register map and tiny MMIO helpers.
  *
  * Defines the memory-mapped register block of the ARM PL011 and a few
@@ -13,25 +13,13 @@
  *  @{
  */
 
-#ifndef PL011_REGS_H
-#define PL011_REGS_H
+#ifndef BCM2835_PL011_REGS_H
+#define BCM2835_PL011_REGS_H
 
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-
-
-#define PL011_BASE_BUS		    0x7E201000u /**< Bus address from BCM2835 manual. */
-#define PERIPH_BUS_OFFSET 	    0x3F000000u /**< Bus→phys offset on RPi2b. */
-
-/**
- * @def PL011_BASE_PHYS
- * @brief Physical base address of the PL011 UART peripheral.
- *
- * The bus address (0x7E201000) must be converted to a physical address by
- * subtracting the peripheral offset (0x3F000000) on BCM2835.
- */
-#define PL011_BASE_PHYS	        (PL011_BASE_BUS - PERIPH_BUS_OFFSET)
+#include <arch/bsp/bcm2835_base.h>
 
 /**
  * @enum pl011_flag_bits
@@ -83,7 +71,7 @@ _Static_assert(sizeof(struct pl011_regs)            == 0x48, "PL011: struct size
 /**
  * @brief Base pointer to the UART hardware registers.
  */
-#define PL011   ((volatile struct pl011_regs *)(uintptr_t)PL011_BASE_PHYS)
+#define PL011   ((volatile struct pl011_regs *)(uintptr_t)BCM2835_PL011_BASE_PHYS)
 
 /**
  * @brief Check whether the transmit FIFO is full.
@@ -101,5 +89,5 @@ static inline bool pl011_rx_empty(void){
     return (PL011->FR & FR_RXFE) != 0u;
 }
 
-#endif /* PL011_REGS_H */
+#endif /* BCM2835_PL011_REGS_H */
 /** @} */ /* end of uart_bsp */
