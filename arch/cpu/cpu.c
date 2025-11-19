@@ -3,17 +3,16 @@
 
 static const char* cpu_mode_str(uint32_t mode) {
     switch (mode) {
-        case CPU_USR: return "   USR";
-        case CPU_FIQ: return "   FIQ";
-        case CPU_IRQ: return "   IRQ";
-        case CPU_SVC: return "   SVC";
-        case CPU_ABT: return "   ABT";
-        case CPU_UND: return "   UND";
-        case CPU_SYS: return "   SYS";
-             default: return "   INVALID";
+        case CPU_USR: return "        User"; 
+        case CPU_FIQ: return "         FIQ"; 
+        case CPU_IRQ: return "         IRQ";
+        case CPU_SVC: return "  Supervisor"; 
+        case CPU_ABT: return "       Abort"; 
+        case CPU_UND: return "   Undefined";
+        case CPU_SYS: return "      System"; 
+        default:      return "     Invalid"; 
     }
 }
-
 void cpu_print_psr(uint32_t psr) {
     char n = (psr & CPSR_N) ? 'N' : '_';
     char z = (psr & CPSR_Z) ? 'Z' : '_';
@@ -26,6 +25,8 @@ void cpu_print_psr(uint32_t psr) {
     
     const char* mode = cpu_mode_str(psr & CPSR_MODE_MASK);
     
-    kprintf("%c%c%c%c %c %c%c%c %s %p", 
-            n, z, c, v, e, i, f, t, mode, psr);
+    kprintf("%c%c%c%c %c %c%c%c", n, z, c, v, e, i, f, t);
+    
+    kprintf(" %s", mode);
+    kprintf(" 0x%08x", psr);   
 }
