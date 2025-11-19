@@ -10,17 +10,28 @@
 #define BCM2835_IRQ_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <arch/bsp/bcm2835_base.h>
 
 /** @brief Bit mask for System Timer Compare 1 in pending register. */
 #define IRQCTRL_PENDING_TIMER_C1_BIT (1u << 1)
 
+/**
+ * @struct cm2835_irqctrl_regs
+ * @brief Memory-mapped IRQ register block.
+ *
+ * Use @ref BCM2835_IRQCTRL to access the device instance.
+ */
 struct bcm2835_irqctrl_regs {
     volatile uint32_t unused1;          /* 0x00 */
     volatile uint32_t pending_1;        /* 0x04 */
     volatile uint32_t unused2[2];       /* 0x08-0x0C*/
     volatile uint32_t enable_1;         /* 0x10 */
 };
+
+_Static_assert(offsetof(struct bcm2835_irqctrl_regs, pending_1)  == 0x04, "bcm2835_irqctrl_regs: pending_1 OFFSET");
+_Static_assert(offsetof(struct bcm2835_irqctrl_regs, enable_1)   == 0x10, "bcm2835_irqctrl_regs: enable_1 OFFSET");
+_Static_assert(sizeof(struct bcm2835_irqctrl_regs)               == 0x14, "bcm2835_irqctrl_regs: struct size should reach 0x14");
 
 #define BCM2835_IRQCTRL ((volatile struct bcm2835_irqctrl_regs *)(uintptr_t)BCM2835_IRQCTRL_BASE_PHYS)
 

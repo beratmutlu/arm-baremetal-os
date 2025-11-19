@@ -18,7 +18,7 @@ static void subprogram[[noreturn]](void);
 
 
 void start_kernel[[noreturn]](void);
-void start_kernel(void) {
+void start_kernel[[noreturn]](void) {
     uart_init();
     arm_init_stacks();
     arm_set_vbar(&vectors_table);
@@ -58,13 +58,13 @@ void start_kernel(void) {
                 subprogram();
                 break;
             default:
-                kprintf("Unknown input: [%c]\n", c);
+                kprintf("Unknown input: %c\n", c);
                 break;
         }
     }
 }
 
-static void subprogram(void) {
+static void subprogram[[noreturn]](void) {
     while(true) {
         char c = uart_getc();
         for(unsigned int n = 0; n < PRINT_COUNT; n++) {
