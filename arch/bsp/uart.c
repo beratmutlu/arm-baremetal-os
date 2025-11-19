@@ -11,13 +11,13 @@
  */
 
 #include <arch/bsp/uart.h>
-#include <arch/bsp/pl011_regs.h>
+#include <arch/bsp/bcm2835_pl011_regs.h>
 #include <lib/ringbuffer.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <config.h>
-#include <arch/bsp/irqctrl.h>
+#include <arch/bsp/bcm2835_irq.h>
 #include <arch/cpu/cpu.h>
 
 /** @brief Ring buffer for received characters (size from config.h). */
@@ -25,14 +25,13 @@ create_ringbuffer(ring, UART_INPUT_BUFFER_SIZE);
 
 /** @copydoc uart_irq_enable */
 void uart_irq_enable(void) {
-    /* Enable RX interrupt only (no TX or RT). */
-    PL011->ICR  = 0x7FFu;      /* Clear all pending interrupts.   */
-    PL011->IMSC = (1u << 4);   /* Enable RX interrupt only.       */
+    PL011->ICR  = INT_RX;       /* Clear RX interrupts. */
+    PL011->IMSC = INT_RX;       /* Enable RX interrupt. */
 }
 
 /** @copydoc uart_irq_rx_pending */
 bool uart_irq_rx_pending(void){
-    return (PL011->MIS & (1 << 4)) != 0;
+    return (PL011->MIS & INT_RX) != 0;
 }
 
 /** @copydoc uart_irq_service_rx */
@@ -41,14 +40,13 @@ void uart_irq_service_rx(void){
         char c = (char)(uint8_t)PL011->DR;
         buff_putc(ring, c);
     }
-    PL011->ICR = 1 << 4;
+    PL011->ICR = INT_RX;
 }
 
 /** @copydoc uart_init */
 void uart_init(void) {
     PL011->RSR_ECR = 0xFFFFFFFFu;   /* Clear all error flags */
-    PL011->IMSC = 1 << 4;           /* Enable RX interrupt */
-    PL011->ICR = 1 << 4;            /* Clear any pending RX interrupt */
+    uart_irq_enable();
 }
 /** @copydoc uart_putc */
 void uart_putc(char c) {
