@@ -55,7 +55,7 @@ static void print_mode_regs(const char *name, uint32_t mode,
         spsr = cpu_get_banked_spsr(mode);
     }
     
-    kprintf("\n%-11s | LR: 0x%08x | SP: 0x%08x | SPSR: ", name, lr, sp);
+    kprintf("\n%s| LR: 0x%08x | SP: 0x%08x | SPSR: ", name, lr, sp);
     cpu_print_psr(spsr);
 }
 void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
@@ -86,16 +86,11 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     }
     
     kprintf("\n>> Registerschnappschuss <<\n");
-    kprintf("R0: 0x%08x  R5: 0x%08x  R10: 0x%08x\n", 
-            frame->r[0], frame->r[5], frame->r[10]);
-    kprintf("R1: 0x%08x  R6: 0x%08x  R11: 0x%08x\n", 
-            frame->r[1], frame->r[6], frame->r[11]);
-    kprintf("R2: 0x%08x  R7: 0x%08x  R12: 0x%08x\n", 
-            frame->r[2], frame->r[7], frame->r[12]);
-    kprintf("R3: 0x%08x  R8: 0x%08x\n", 
-            frame->r[3], frame->r[8]);
-    kprintf("R4: 0x%08x  R9: 0x%08x\n", 
-            frame->r[4], frame->r[9]);
+    kprintf("R0: 0x%08x  R5: 0x%08x  R10: 0x%08x\n", frame->r[0], frame->r[5], frame->r[10]);
+    kprintf("R1: 0x%08x  R6: 0x%08x  R11: 0x%08x\n", frame->r[1], frame->r[6], frame->r[11]);
+    kprintf("R2: 0x%08x  R7: 0x%08x  R12: 0x%08x\n", frame->r[2], frame->r[7], frame->r[12]);
+    kprintf("R3: 0x%08x  R8: 0x%08x\n", frame->r[3], frame->r[8]);
+    kprintf("R4: 0x%08x  R9: 0x%08x\n", frame->r[4], frame->r[9]);
     
     kprintf("\n>> Modusspezifische Register <<\n");
     
@@ -103,11 +98,10 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
             cpu_get_banked_lr(CPU_USR), cpu_get_banked_sp(CPU_USR));
     cpu_print_psr(cpu_get_cpsr());
     
-    print_mode_regs("IRQ", CPU_IRQ, kind == EXC_IRQ, frame);
-    print_mode_regs("Abort", CPU_ABT, 
-                   kind == EXC_PABT || kind == EXC_DABT, frame);
-    print_mode_regs("Undefined", CPU_UND, kind == EXC_UND, frame);
-    print_mode_regs("Supervisor", CPU_SVC, kind == EXC_SVC, frame);
+    print_mode_regs("IRQ         ", CPU_IRQ, kind == EXC_IRQ, frame);
+    print_mode_regs("Abort       ", CPU_ABT, kind == EXC_PABT || kind == EXC_DABT, frame);
+    print_mode_regs("Undefined   ", CPU_UND, kind == EXC_UND, frame);
+    print_mode_regs("Supervisor  ", CPU_SVC, kind == EXC_SVC, frame);
     
     
     kprintf("\n");
