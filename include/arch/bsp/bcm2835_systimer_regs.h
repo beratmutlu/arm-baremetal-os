@@ -19,19 +19,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <arch/bsp/bcm2835_base.h>
 
-#define SYSTIMER_BASE_BUS		0x7E003000u /**< Bus address from BCM2835 manual. */
-#define PERIPH_BUS_OFFSET 	    0x3F000000u /**< Bus→phys offset on RPi2b. */
-
-
-/**
- * @def SYSTIMER_BASE_PHYS
- * @brief Physical base address of the Systimer peripheral.
- *
- * The bus address (0x7E003000u) must be converted to a physical address by
- * subtracting the peripheral offset (0x3F000000) on BCM2835.
- */
-#define SYSTIMER_BASE_PHYS       (SYSTIMER_BASE_BUS - PERIPH_BUS_OFFSET)
+#define SYSTIMER_M1 (1u << 1)
 
 /**
  * @struct systimer_regs
@@ -40,13 +30,13 @@
  * Use @ref SYSTIMER to access the device instance.
  */
 struct systimer_regs {
-    volatile uint32_t CS;
-    volatile uint32_t CLO;
-    volatile uint32_t CHI;
-    volatile uint32_t C0;
-    volatile uint32_t C1;
-    volatile uint32_t C2;
-    volatile uint32_t C3;
+    volatile uint32_t CS;   /**< Control/Status (0x00). */
+    volatile uint32_t CLO;  /**< Counter Low 32 bits (0x04). */
+    volatile uint32_t CHI;  /**< Counter High 32 bits (0x08). */
+    volatile uint32_t C0;   /**< Compare 0 (0x0C). */
+    volatile uint32_t C1;   /**< Compare 1 (0x10). */
+    volatile uint32_t C2;   /**< Compare 2 (0x14). */
+    volatile uint32_t C3;   /**< Compare 3 (0x18). */
 };
 
 
@@ -62,7 +52,7 @@ _Static_assert(sizeof(struct systimer_regs)         == 0x1C, "SYSTIMER: struct s
 /**
  * @brief Base pointer to the Systimer hardware registers.
  */
-#define SYSTIMER   ((volatile struct systimer_regs *)(uintptr_t)SYSTIMER_BASE_PHYS)
+#define SYSTIMER   ((volatile struct systimer_regs *)(uintptr_t)BCM2835_SYSTIMER_BASE_PHYS)
 
 
 #endif /* BCM2835_SYSTIMER_REGS_H */
