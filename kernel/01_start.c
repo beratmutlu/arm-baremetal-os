@@ -1,13 +1,14 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <config.h>
 #include <arch/cpu/stacks.h>
 #include <arch/cpu/cpu.h>
 #include <arch/bsp/uart.h>
 #include <arch/bsp/systimer.h>
-#include <arch/bsp/irqctrl.h>
+#include <arch/bsp/bcm2835_irq.h>
 #include <kernel/kprintf.h>
 #include <kernel/exceptions.h>
-#include <config.h>
+#include <kernel/exc_triggers.h>
 
 extern bool irq_debug;
 extern void test_kernel(void);

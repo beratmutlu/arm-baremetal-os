@@ -1,3 +1,14 @@
+/**
+ * @file exception_print.h
+ * @brief Formatted exception information output.
+ *
+ * Provides a unified function to print exception details including:
+ * - Exception type and faulting address
+ * - Fault status registers (for aborts)
+ * - Register snapshot
+ * - Mode-specific banked registers
+ */
+
 #ifndef EXCEPTION_PRINT_H
 #define EXCEPTION_PRINT_H
 
@@ -5,7 +16,20 @@
 
 struct exc_frame;
 
-void print_exception_infos(const enum exc_kind kind,
-                          const struct exc_frame* frame);
+struct mode_info {
+    const char *name;
+    uint32_t mode_const;
+    bool is_current;
+};
 
-#endif
+/**
+ * @brief Print detailed information about an exception.
+ * @param kind Type of exception
+ * @param frame Pointer to saved register context
+ *
+ * Outputs a formatted dump including register state, fault registers
+ * (if applicable), and all mode-specific banked registers.
+ */
+void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame);
+
+#endif /* EXCEPTION_PRINT_H */

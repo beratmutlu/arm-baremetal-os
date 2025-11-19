@@ -1,15 +1,16 @@
+#include <stdint.h>
 #include <kernel/exception_print.h>
 #include <kernel/exceptions.h>
-#include <kernel/exc_frame.h>
+#include <kernel/exc_frame_layout.h>
 #include <kernel/kprintf.h>
+#include <arch/cpu/banked_regs.h>
 #include <arch/cpu/cpu.h>
-#include <stdint.h>
 
 static inline unsigned fsr_status(uint32_t fsr) {
-    return ((fsr >> 10) & 1u) << 4 | (fsr & 0xFu);
+    return (((fsr >> 10) & 1u) << 4) | (fsr & 0xFu);
 }
 
-const char* fsr_description(uint32_t fsr) {
+static inline const char* fsr_description(uint32_t fsr) {
     static const char *tbl[32] = {
         [0x00] = "No function, reset value",
         [0x01] = "Alignment fault",
@@ -39,6 +40,24 @@ const char* fsr_description(uint32_t fsr) {
     return (code < 32 && tbl[code]) ? tbl[code] : "Invalid/unknown FSR";
 }
 
+static void print_mode_regs(const char *name, uint32_t mode, 
+                           bool is_current_mode,
+                           const struct exc_frame *frame) {
+    uint32_t lr, sp, spsr;
+    
+    if (is_current_mode) {
+        lr = frame->lr;
+        sp = exc_frame_get_sp(frame);
+        spsr = cpu_get_spsr();
+    } else {
+        lr = cpu_get_banked_lr(mode);
+        sp = cpu_get_banked_sp(mode);
+        spsr = cpu_get_banked_spsr(mode);
+    }
+    
+    kprintf("\n%-11s | LR: 0x%08x | SP: 0x%08x | SPSR: ", name, lr, sp);
+    cpu_print_psr(spsr);
+}
 void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     const char *name =
         (kind == EXC_UND)  ? "Undefined Instruction" :
@@ -51,16 +70,16 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     kprintf("%s an Adresse: 0x%08x\n", name, frame->lr);
     
     if (kind == EXC_DABT) {
-        uint32_t dfsr = read_dfsr();
-        uint32_t dfar = read_dfar();
+        uint32_t dfsr = mmu_get_dfsr();
+        uint32_t dfar = mmu_get_dfar();
         const char* desc = fsr_description(dfsr);
         kprintf("Data Fault Status Register: 0x%08x -> %s\n", dfsr, desc);
         kprintf("Data Fault Adress Register: 0x%08x\n", dfar);
     }
     
     if (kind == EXC_PABT) {
-        uint32_t ifsr = read_ifsr();
-        uint32_t ifar = read_ifar();
+        uint32_t ifsr = mmu_get_ifsr();
+        uint32_t ifar = mmu_get_ifar();
         const char* desc = fsr_description(ifsr);
         kprintf("Instruction Fault Status Register: 0x%08x -> %s\n", ifsr, desc);
         kprintf("Instruction Fault Adress Register: 0x%08x\n", ifar);
@@ -81,56 +100,15 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     kprintf("\n>> Modusspezifische Register <<\n");
     
     kprintf("User/System | LR: 0x%08x | SP: 0x%08x | CPSR: ",
-            read_banked_lr_usr(), read_banked_sp_usr());
-    cpu_print_psr(read_cpsr());
+            cpu_get_banked_lr(CPU_USR), cpu_get_banked_sp(CPU_USR));
+    cpu_print_psr(cpu_get_cpsr());
     
-    if (kind == EXC_IRQ) {
-    uint32_t sp_irq_at_entry = (uint32_t)frame + sizeof(*frame);
-    kprintf("\nIRQ         | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            frame->lr, sp_irq_at_entry);
-    cpu_print_psr(read_spsr_current());
-} else {
-    kprintf("\nIRQ         | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            read_banked_lr_irq(), read_banked_sp_irq());
-    cpu_print_psr(read_banked_spsr_irq());
-}
-
-
-if (kind == EXC_PABT || kind == EXC_DABT) {
-    uint32_t sp_abt_at_entry = (uint32_t)frame + sizeof(*frame);
-    kprintf("\nAbort       | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            frame->lr, sp_abt_at_entry);
-    cpu_print_psr(read_spsr_current());
-} else {
-    kprintf("\nAbort       | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            read_banked_lr_abt(), read_banked_sp_abt());
-    cpu_print_psr(read_banked_spsr_abt());
-}
-
-
-if (kind == EXC_UND) {
-    uint32_t sp_und_at_entry = (uint32_t)frame + sizeof(*frame);
-    kprintf("\nUndefined   | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            frame->lr, sp_und_at_entry);
-    cpu_print_psr(read_spsr_current());
-} else {
-    kprintf("\nUndefined   | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            read_banked_lr_und(), read_banked_sp_und());
-    cpu_print_psr(read_banked_spsr_und());
-}
-
-
-if (kind == EXC_SVC) {
-    uint32_t sp_svc_at_entry = (uint32_t)frame + sizeof(*frame);
-    kprintf("\nSupervisor  | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            frame->lr, sp_svc_at_entry);
-    cpu_print_psr(read_spsr_current());
-} else {
-    kprintf("\nSupervisor  | LR: 0x%08x | SP: 0x%08x | SPSR: ",
-            read_banked_lr_svc(), read_banked_sp_svc());
-    cpu_print_psr(read_banked_spsr_svc());
-}
-kprintf("\n");
+    print_mode_regs("IRQ", CPU_IRQ, kind == EXC_IRQ, frame);
+    print_mode_regs("Abort", CPU_ABT, 
+                   kind == EXC_PABT || kind == EXC_DABT, frame);
+    print_mode_regs("Undefined", CPU_UND, kind == EXC_UND, frame);
+    print_mode_regs("Supervisor", CPU_SVC, kind == EXC_SVC, frame);
+    
     
     kprintf("\n");
 }

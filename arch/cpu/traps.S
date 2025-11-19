@@ -1,3 +1,5 @@
+#include "kernel/exc_frame_layout.h"
+
 .syntax unified
 .arch armv7-a
 .arm
@@ -10,24 +12,43 @@
 .extern dabt_handler_c
 .extern irq_handler_c
 
-#define FRAME_SIZE (15 * 4)
 
+/*
+ * EXC_ENTRY
+ *
+ * On entry:
+ *   - CPU in exception mode (UND/SVC/ABT/IRQ)
+ *   - LR = return address + mode-specific adjustment
+ *   - SPSR_<mode> = CPSR snapshot at exception time
+ *
+ * On exit:
+ *   - SP points to newly reserved exc_frame
+ *   - Memory layout matches struct exc_frame (see exc_frame_layout.h)
+ */
 .macro EXC_ENTRY
-    SUB     SP, SP, #FRAME_SIZE
-    STMIA   SP, {R0-R12}
+    SUB     SP, SP, #EXC_FRAME_TOTAL_BYTES  /**< reserve frame */
+    STMIA   SP, {R0-R12}                    /**< save r0-r12 */
     MRS     R1, SPSR
-    STR     LR, [SP, #52]
-    STR     R1, [SP, #56]
+    STR     LR, [SP, #OFF_LR]               /**< save LR at it's ABI-defined offset */
+    STR     R1, [SP, #OFF_SPSR]             /**< save SPSR at it's ABI-defined offset*/
 .endm
 
+/*
+ * EXC_EXIT adjust
+ *
+ * Restores registers from the frame and returns from the exception.
+ * 'adjust' is the amount to subtract from LR before restoring PC, if needed.
+ */
 .macro EXC_EXIT adjust=4
-    LDR     R1, [SP, #56]
+    LDR     R1, [SP, #OFF_SPSR]             /**< restore SPSR first*/
     MSR     SPSR_cxsf, R1
-    LDMIA   SP, {R0-R12, LR}
-    ADD     SP, SP, #FRAME_SIZE
-    .if \adjust == 0
+
+    LDMIA   SP, {R0-R12, LR}                /**< restore r0-r12 and LR */
+
+    ADD     SP, SP, #EXC_FRAME_TOTAL_BYTES  /**< pop frame */
+    .if \adjust == 0                        /**< straight return */
         MOVS    PC, LR
-    .else
+    .else                                   /**< LR already points past the trapping instruction */
         SUBS    PC, LR, #\adjust
     .endif
 .endm

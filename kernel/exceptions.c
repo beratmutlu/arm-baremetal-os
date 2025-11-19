@@ -5,40 +5,29 @@
 #include <kernel/kprintf.h>
 #include <arch/bsp/systimer.h>
 #include <arch/bsp/uart.h>
-#include <arch/bsp/irqctrl.h>
+#include <arch/bsp/bcm2835_irq.h>
+#include <kernel/panic.h>
 
 bool irq_debug = false;
 
-#define halt()                      \
-	do {                        \
-		asm("cpsid if");    \
-		while (true) {      \
-			asm("wfi"); \
-		}                   \
-	} while (0)
-
 void und_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_UND, frame);
-    uart_putc('\4');
-    halt();
+    panic("Undefined Instruction");
 }
 
 void svc_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_SVC, frame);
-    uart_putc('\4');
-    halt();
+    panic("Supervisor Call");
 }
 
 void pabt_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_PABT, frame);
-    uart_putc('\4');
-    halt();
+    panic("Prefetch Abort");
 }
 
 void dabt_handler_c[[noreturn]](struct exc_frame *frame) {
     print_exception_infos(EXC_DABT, frame);
-    uart_putc('\4');
-    halt();
+    panic("Data Abort");
 }
 
 void irq_handler_c(struct exc_frame *frame) {
@@ -48,7 +37,7 @@ void irq_handler_c(struct exc_frame *frame) {
         print_exception_infos(EXC_IRQ, frame);
     }
     
-    if (pending & (1 << 1)) {
+    if (pending & IRQCTRL_PENDING_TIMER_C1_BIT) {
         clear_timer_interrupt();
         set_next_timer_interrupt();
         kprintf("!\n");
