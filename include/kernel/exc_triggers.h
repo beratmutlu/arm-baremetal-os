@@ -30,7 +30,13 @@ static inline void do_prefetch_abort(void) {
  * @brief Trigger a supervisor call exception.
  */
 static inline void do_supervisor_call(void) {
-    asm volatile("svc #0");
+    asm volatile(
+        "mrs r0, cpsr        \n"
+        "bic r0, r0, #0x1f   \n"  
+        "orr r0, r0, #0x1f   \n"  
+        "msr cpsr_c, r0      \n"  
+        "svc #0              \n"  
+    );
 }
 
 /**
