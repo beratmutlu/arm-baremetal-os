@@ -13,9 +13,11 @@
 #include <stddef.h>
 #include <arch/bsp/bcm2835_base.h>
 
-/** @brief Bit mask for System Timer Compare 1 in pending register. */
-#define IRQCTRL_PENDING_TIMER_C1_BIT (1u << 1)
+/** @brief Bit mask for System Timer Compare 1 interrupt. */
+#define IRQCTRL_TIMER_C1_BIT (1u << 1)
 
+/** @brief Bit mask for PL011 UART interrupt. */
+#define IRQCTRL_PL011_BIT (1u << 25)
 /**
  * @struct cm2835_irqctrl_regs
  * @brief Memory-mapped IRQ register block.
@@ -25,21 +27,18 @@
 struct bcm2835_irqctrl_regs {
     volatile uint32_t unused1;          /* 0x00 */
     volatile uint32_t pending_1;        /* 0x04 */
-    volatile uint32_t unused2[2];       /* 0x08-0x0C*/
+    volatile uint32_t pending_2;        /* 0x08 */
+    volatile uint32_t unused2;          /* 0x0C */
     volatile uint32_t enable_1;         /* 0x10 */
+    volatile uint32_t enable_2;         /* 0x14 */
 };
 
 _Static_assert(offsetof(struct bcm2835_irqctrl_regs, pending_1)  == 0x04, "bcm2835_irqctrl_regs: pending_1 OFFSET");
 _Static_assert(offsetof(struct bcm2835_irqctrl_regs, enable_1)   == 0x10, "bcm2835_irqctrl_regs: enable_1 OFFSET");
-_Static_assert(sizeof(struct bcm2835_irqctrl_regs)               == 0x14, "bcm2835_irqctrl_regs: struct size should reach 0x14");
+_Static_assert(offsetof(struct bcm2835_irqctrl_regs, enable_2)   == 0x14, "bcm2835_irqctrl_regs: enable_2 OFFSET");
+_Static_assert(sizeof(struct bcm2835_irqctrl_regs)               == 0x18, "bcm2835_irqctrl_regs: struct size should reach 0x14");
 
 #define BCM2835_IRQCTRL ((volatile struct bcm2835_irqctrl_regs *)(uintptr_t)BCM2835_IRQCTRL_BASE_PHYS)
-
-/** @brief Bit mask for System Timer Compare 1 interrupt. */
-#define IRQCTRL_ENABLE_TIMER_C1_BIT  (1u << 1)
-
-/** @brief Bit mask for PL011 UART interrupt. */
-#define IRQCTRL_ENABLE_PL011_BIT     (1u << 25)
 
 /**
  * @brief Enable System Timer Compare 1 interrupt.
@@ -57,5 +56,10 @@ void irqctrl_enable_uart(void);
  */
 uint32_t irqctrl_pending1(void);
 
+/**
+ * @brief Read pending interrupt status for bank2.
+ * @return Bitmask of pending interrupts
+ */
+uint32_t irqctrl_pending2(void);
 #endif /* BCM2835_IRQ_H */
 /** @} */ /* end of irq_bsp */
