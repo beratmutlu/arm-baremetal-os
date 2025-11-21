@@ -3,14 +3,14 @@
 
 static const char* cpu_mode_str(uint32_t mode) {
     switch (mode) {
-        case CPU_USR: return "        User"; 
-        case CPU_FIQ: return "         FIQ"; 
-        case CPU_IRQ: return "         IRQ";
-        case CPU_SVC: return "  Supervisor"; 
-        case CPU_ABT: return "       Abort"; 
-        case CPU_UND: return "   Undefined";
-        case CPU_SYS: return "      System"; 
-        default:      return "     Invalid"; 
+        case CPU_USR: return "       User"; 
+        case CPU_FIQ: return "        FIQ"; 
+        case CPU_IRQ: return "        IRQ";
+        case CPU_SVC: return " Supervisor"; 
+        case CPU_ABT: return "      Abort"; 
+        case CPU_UND: return "  Undefined";
+        case CPU_SYS: return "     System"; 
+        default:      return "    Invalid"; 
     }
 }
 void cpu_print_psr(uint32_t psr) {

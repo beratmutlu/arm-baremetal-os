@@ -6,38 +6,43 @@
 #include <arch/cpu/banked_regs.h>
 #include <arch/cpu/cpu.h>
 
-static inline unsigned fsr_status(uint32_t fsr) {
-    return (((fsr >> 10) & 1u) << 4) | (fsr & 0xFu);
-}
-
-static inline const char* fsr_description(uint32_t fsr) {
-    static const char *tbl[32] = {
-        [0x00] = "No function, reset value",
-        [0x01] = "Alignment fault",
-        [0x02] = "Debug event fault",
-        [0x03] = "Access Flag fault on Section",
-        [0x04] = "Cache maintenance operation fault",
-        [0x05] = "Translation fault on Section",
-        [0x06] = "Access Flag fault on Page",
-        [0x07] = "Translation fault on Page",
-        [0x08] = "Precise External Abort",
-        [0x09] = "Domain fault on Section",
-        [0x0B] = "Domain fault on Page",
-        [0x0C] = "External abort on Section",
-        [0x0D] = "Permission fault on Section",
-        [0x0E] = "External abort on Page",
-        [0x0F] = "Permission fault on Page",
-        [0x10] = "TLB conflict abort",
-        [0x14] = "Implementation-defined fault",
-        [0x16] = "External Abort",
-        [0x18] = "Async parity error on memory access",
-        [0x19] = "Sync parity error on memory access",
-        [0x1A] = "Implementation-defined fault",
-        [0x1C] = "Sync parity error on TT walk (section)",
-        [0x1E] = "Sync parity error on TT walk (page)",
+const char* get_fsr_description(unsigned int fsr){
+    static const char *fsr_sources[] = {
+        [0b00000] =  "No function, reset value",
+        [0b00001] =  "Alignment fault",
+        [0b00010] =  "Debug event fault",
+        [0b00011] =  "Access Flag fault on Section",
+        [0b00100] =  "Cache maintenance operation fault",
+        [0b00101] =  "Translation fault on Section",
+        [0b00110] =  "Access Flag fault on Page",
+        [0b00111] =  "Translation fault on Page",
+        [0b01000] =  "Precise External Abort",
+        [0b01001] =  "Domain fault on Section",
+        [0b01011] =  "Domain fault on Page",
+        [0b01100] =  "External abort on Section",
+        [0b01101] =  "Permission fault on Section",
+        [0b01110] =  "External abort on Page",
+        [0b01111] =  "Permission fault on Page",
+        [0b10000] =  "TLB conflict abort",
+        [0b10100] =  "Implementation definedf fault",
+        [0b10110] =  "External Abort",
+        [0b11000] =  "Asynchronous parity error on memory access",
+        [0b11001] =  "Synchronous parity error on memory access",
+        [0b11010] =  "Implementation defined fault",
+        [0b11100] =  "Synchronous parity error on translation table walk on section",
+        [0b11110] =  "Synchronous parity error on translation table walk on page",
     };
-    unsigned code = fsr_status(fsr);
-    return (code < 32 && tbl[code]) ? tbl[code] : "Invalid/unknown FSR";
+
+    const int fsr_status_4_index = 10;
+    unsigned int fsr_status = (fsr & 0b1111) |
+     ((fsr & (1 << (fsr_status_4_index - 1))) >> (fsr_status_4_index - 4 - 1));
+
+    if(fsr_status > sizeof(fsr_sources) / sizeof(const char*) ||
+       fsr_sources[fsr_status] == NULL){
+        return "Invalid fault status register value";
+    }
+
+    return fsr_sources[fsr_status];
 }
 
 static void print_mode_regs(const char *name, uint32_t mode, 
@@ -72,7 +77,7 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     if (kind == EXC_DABT) {
         uint32_t dfsr = mmu_get_dfsr();
         uint32_t dfar = mmu_get_dfar();
-        const char* desc = fsr_description(dfsr);
+        const char* desc = get_fsr_description(dfsr);
         kprintf("Data Fault Status Register: 0x%08x -> %s\n", dfsr, desc);
         kprintf("Data Fault Adress Register: 0x%08x\n", dfar);
     }
@@ -80,7 +85,7 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     if (kind == EXC_PABT) {
         uint32_t ifsr = mmu_get_ifsr();
         uint32_t ifar = mmu_get_ifar();
-        const char* desc = fsr_description(ifsr);
+        const char* desc = get_fsr_description(ifsr);
         kprintf("Instruction Fault Status Register: 0x%08x -> %s\n", ifsr, desc);
         kprintf("Instruction Fault Adress Register: 0x%08x\n", ifar);
     }
