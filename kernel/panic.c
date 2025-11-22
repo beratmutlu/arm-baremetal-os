@@ -7,8 +7,8 @@ void _panic [[noreturn]] (const char *func_name, const char *msg) {
 
     uart_init();
 
-    kprintf("KERNEL PANIC in %s: %s\n", func_name, msg);
-    kprintf("System halted.\n");
+    //kprintf("KERNEL PANIC in %s: %s\n", func_name, msg);
+    //kprintf("System halted.\n");
 
     while (true)
     {
