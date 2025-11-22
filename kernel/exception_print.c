@@ -53,7 +53,7 @@ static void print_mode_regs(const char *name, uint32_t mode,
     if (is_current_mode) {
         lr = frame->lr;
         sp = exc_frame_get_sp(frame);
-        spsr = cpu_get_spsr();
+        spsr = exc_frame_get_spsr(frame);
     } else {
         lr = cpu_get_banked_lr(mode);
         sp = cpu_get_banked_sp(mode);
