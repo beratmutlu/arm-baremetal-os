@@ -30,3 +30,7 @@ void cpu_print_psr(uint32_t psr) {
     kprintf(" %s", mode);
     kprintf(" 0x%08x", psr);   
 }
+
+bool is_user_mode(const uint32_t cpsr) {
+    return (cpsr & CPSR_MODE_MASK) == CPU_USR;
+}

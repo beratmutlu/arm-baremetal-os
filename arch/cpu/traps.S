@@ -60,25 +60,25 @@ und_tramp:
     EXC_ENTRY
     MOV     R0, SP
     BL      und_handler_c
-
+    EXC_EXIT 4
 svc_tramp:
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      svc_handler_c
-
+    EXC_EXIT 4
 pabt_tramp:
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      pabt_handler_c
-
+    EXC_EXIT 4
 dabt_tramp:
     SUB     LR, LR, #8
     EXC_ENTRY
     MOV     R0, SP
     BL      dabt_handler_c
-
+    EXC_EXIT 8
 irq_tramp:
     EXC_ENTRY
     MOV     R0, SP

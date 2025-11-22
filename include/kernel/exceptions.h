@@ -38,25 +38,25 @@ struct exc_frame;
  * @brief Undefined instruction exception handler.
  * @param frame Pointer to saved register context
  */
-void und_handler_c [[noreturn]] (struct exc_frame* frame);
+void und_handler_c(struct exc_frame* frame);
 
 /**
  * @brief Supervisor call exception handler.
  * @param frame Pointer to saved register context
  */
-void svc_handler_c [[noreturn]] (struct exc_frame* frame);
+void svc_handler_c(struct exc_frame* frame);
 
 /**
  * @brief Prefetch abort exception handler.
  * @param frame Pointer to saved register context
  */
-void pabt_handler_c [[noreturn]] (struct exc_frame* frame);
+void pabt_handler_c(struct exc_frame* frame);
 
 /**
  * @brief Data abort exception handler.
  * @param frame Pointer to saved register context
  */
-void dabt_handler_c [[noreturn]] (struct exc_frame* frame);
+void dabt_handler_c(struct exc_frame* frame);
 
 /**
  * @brief Hardware interrupt (IRQ) handler.

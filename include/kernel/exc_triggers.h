@@ -9,6 +9,7 @@
 #ifndef EXC_TRIGGERS_H
 #define EXC_TRIGGERS_H
 
+#include <stdint.h>
 
 /**
  * @brief Trigger a data abort by accessing misaligned memory.
@@ -39,10 +40,17 @@ static inline void do_supervisor_call(void) {
     );
 }
 
+static inline void do_svc(void) {
+    asm volatile ("svc #0");
+}
 /**
  * @brief Trigger an undefined instruction exception.
  */
 static inline void do_undefined_inst(void) {
+    asm volatile(".word 0xE7F000F0");
+}
+
+static inline void do_undef(void) {
     asm volatile(".word 0xE7F000F0");
 }
 

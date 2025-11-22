@@ -60,6 +60,41 @@ uint32_t cpu_get_banked_sp(uint32_t mode) {
     }
 }
 
+void cpu_set_banked_sp(uint32_t mode, uint32_t sp) {
+    uint32_t current_mode = cpu_get_cpsr() & CPSR_MODE_MASK;
+    
+    if (mode == current_mode) {
+        asm volatile("mov sp, %0" :: "r"(sp));
+        return;
+    }
+    
+    switch (mode) {
+        case CPU_USR:
+        case CPU_SYS: {
+            asm volatile("msr sp_usr, %0" :: "r"(sp));
+            return;
+        }
+        case CPU_IRQ: {
+            asm volatile("msr sp_irq, %0" :: "r"(sp));
+            return;
+        }
+        case CPU_SVC: {
+            asm volatile("msr sp_svc, %0" :: "r"(sp));
+            return;
+        }
+        case CPU_ABT: {
+            asm volatile("msr sp_abt, %0" :: "r"(sp));
+            return;
+        }
+        case CPU_UND: {
+            asm volatile("msr sp_und, %0" :: "r"(sp));
+            return;
+        }
+        default:
+            panic("Invalid mode for cpu_set_banked_sp");
+    }
+}
+
 uint32_t cpu_get_banked_lr(uint32_t mode) {
     uint32_t current_mode = cpu_get_cpsr() & CPSR_MODE_MASK;
     
@@ -100,6 +135,42 @@ uint32_t cpu_get_banked_lr(uint32_t mode) {
             panic("Invalid mode for cpu_get_banked_lr");
     }
 }
+
+void cpu_set_banked_lr(uint32_t mode, uint32_t lr) {
+    uint32_t current_mode = cpu_get_cpsr() & CPSR_MODE_MASK;
+    
+    if (mode == current_mode) {
+        asm volatile("mov lr, %0" :: "r"(lr));
+        return;
+    }
+    
+    switch (mode) {
+        case CPU_USR:
+        case CPU_SYS: {
+            asm volatile("msr lr_usr, %0" :: "r"(lr));
+            return;
+        }
+        case CPU_IRQ: {
+            asm volatile("msr lr_irq, %0" :: "r"(lr));
+            return;
+        }
+        case CPU_SVC: {
+            asm volatile("msr lr_svc, %0" :: "r"(lr));
+            return;
+        }
+        case CPU_ABT: {
+            asm volatile("msr lr_abt, %0" :: "r"(lr));
+            return;
+        }
+        case CPU_UND: {
+            asm volatile("msr lr_und, %0" :: "r"(lr));
+            return;
+        }
+        default:
+            panic("Invalid mode for cpu_set_banked_lr");
+    }
+}
+
 
 uint32_t cpu_get_banked_spsr(uint32_t mode) {
     /* USR and SYS have no SPSR */

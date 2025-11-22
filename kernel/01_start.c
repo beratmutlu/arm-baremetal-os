@@ -9,12 +9,13 @@
 #include <kernel/kprintf.h>
 #include <kernel/exceptions.h>
 #include <kernel/exc_triggers.h>
+#include <kernel/threads.h>
+#include <kernel/scheduler.h>
 
 extern bool irq_debug;
 extern void test_kernel(void);
 extern void register_checker(void);
 
-static void subprogram[[noreturn]](void);
 
 
 void start_kernel[[noreturn]](void);
@@ -22,55 +23,19 @@ void start_kernel[[noreturn]](void) {
     uart_init();
     arm_init_stacks();
     arm_set_vbar(&vectors_table);
-	uart_irq_enable();
     systimer_init();
     irqctrl_enable_uart();
     irqctrl_enable_timer();
     
+    threads_init();
+    scheduler_init();
+
+
     cpu_irq_enable();
-    
     kprintf("=== Betriebssystem gestartet ===\n");
     test_kernel();
-    
+    scheduler_start();
     while(true) {
-        char c = uart_getc();
-        
-        switch(c) {
-            case 'd':
-                irq_debug = !irq_debug;
-                break;
-            case 'a':
-                do_data_abort();
-                break;
-            case 'p':
-                do_prefetch_abort();
-                break;
-            case 's':
-                do_supervisor_call();
-                break;
-            case 'u':
-                do_undefined_inst();
-                break;
-            case 'c':
-                register_checker();
-                break;
-            case 'e':
-                subprogram();
-                break;
-            default:
-                kprintf("Unknown input: %c\n", c);
-                break;
-        }
-    }
-}
-
-static void subprogram[[noreturn]](void) {
-    while(true) {
-        char c = uart_getc();
-        for(unsigned int n = 0; n < PRINT_COUNT; n++) {
-            uart_putc(c);
-            volatile unsigned int i = 0;
-            for(; i < BUSY_WAIT_COUNTER; i++) {}
-        }
+        asm volatile("wfi");
     }
 }
