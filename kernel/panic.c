@@ -6,7 +6,8 @@ void _panic [[noreturn]] (const char *func_name, const char *msg) {
     asm volatile("cpsid if");
 
     uart_init();
-
+    func_name++;
+    msg++;
     //kprintf("KERNEL PANIC in %s: %s\n", func_name, msg);
     //kprintf("System halted.\n");
 
