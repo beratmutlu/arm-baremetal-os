@@ -22,8 +22,7 @@ static inline void do_data_abort(void) {
  * @brief Trigger a prefetch abort by branching to invalid address.
  */
 static inline void do_prefetch_abort(void) {
-    void (*bad_func)(void) = (void (*)(void))0xBADBADF0u;
-    bad_func();
+    asm volatile("bkpt #0");
 }
 
 /**
