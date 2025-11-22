@@ -11,7 +11,7 @@
 #include <arch/cpu/cpu.h>
 #include <kernel/syscall.h>
 #include <user/main.h>
-
+#include <kernel/exc_triggers.h>
 bool irq_debug = false;
 
 void und_handler_c(struct exc_frame *frame) {
@@ -82,17 +82,30 @@ void irq_handler_c(struct exc_frame *frame) {
     
     if (pending2 & IRQCTRL_PL011_BIT) {
         if (uart_irq_rx_pending()) {
-            kprintf("[UART-IRQ]");
             uart_irq_service_rx();
 
             char c = uart_getc();
-
-            if (c == 'd') {
+            switch (c)
+            {
+            case 'd':
                 irq_debug = !irq_debug;
-            } else {
+                break;
+            case 'S':
+                do_svc();
+                break;
+            case 'P':
+                do_prefetch_abort();
+                break;
+            case 'A':
+                do_data_abort();
+                break;
+            case 'U':
+                do_undefined_inst();
+                break;
+            default:
                 scheduler_thread_create(main, &c, sizeof(c));
+                break;
             }
-        }
-        
+        } 
     }
 }
