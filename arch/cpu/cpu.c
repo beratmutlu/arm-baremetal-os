@@ -27,6 +27,6 @@ void cpu_print_psr(uint32_t psr) {
     
     kprintf("%c%c%c%c %c %c%c%c", n, z, c, v, e, i, f, t);
     
-    kprintf("%s", mode);
+    kprintf(" %s", mode);
     kprintf(" 0x%08x", psr);   
 }
