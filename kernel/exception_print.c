@@ -53,7 +53,7 @@ static void print_mode_regs(const char *name, uint32_t mode,
     if (is_current_mode) {
         lr = frame->lr;
         sp = exc_frame_get_sp(frame);
-        spsr = frame->spsr;
+        spsr = cpu_get_spsr();
     } else {
         lr = cpu_get_banked_lr(mode);
         sp = cpu_get_banked_sp(mode);
@@ -101,7 +101,7 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     
     kprintf("User/System | LR: 0x%08x | SP: 0x%08x | CPSR: ",
             cpu_get_banked_lr(CPU_USR), cpu_get_banked_sp(CPU_USR));
-    cpu_print_psr(cpu_get_cpsr());
+    cpu_print_psr(frame->spsr);
     
     print_mode_regs("IRQ         ", CPU_IRQ, kind == EXC_IRQ, frame);
     print_mode_regs("Abort       ", CPU_ABT, kind == EXC_PABT || kind == EXC_DABT, frame);
