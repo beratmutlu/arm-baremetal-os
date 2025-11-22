@@ -21,12 +21,20 @@
  */
 uint32_t cpu_get_banked_sp(uint32_t mode);
 
+
+void cpu_set_banked_sp(uint32_t mode, uint32_t sp);
+
+
 /**
  * @brief Read the link register of a specific CPU mode.
  * @param mode CPU mode
  * @return Link register value
  */
 uint32_t cpu_get_banked_lr(uint32_t mode);
+
+
+void cpu_set_banked_lr(uint32_t mode, uint32_t lr);
+
 
 /**
  * @brief Read the saved program status register of a specific CPU mode.

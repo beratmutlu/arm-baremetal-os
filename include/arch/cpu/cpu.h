@@ -65,6 +65,8 @@ static inline void cpu_irq_enable(void) {
     asm volatile("cpsie i" ::: "memory");
 }
 
+bool is_user_mode(const uint32_t cpsr);
+
 #endif /* !__ASSEMBLER__ */
 
 #endif /* CPU_H */
