@@ -18,8 +18,8 @@
  * auch gerne selbst verändern.
  */
 
-void test_kernel [[gnu::weak]] (void);
-void test_user [[gnu::weak]] (void *args);
+void test_kernel  [[gnu::weak]] (void);
+void test_user [[gnu::weak]] (char c);
 void test_user_main [[gnu::weak]] (void);
 
 /**
@@ -28,13 +28,13 @@ void test_user_main [[gnu::weak]] (void);
 
 #ifdef BUILD_FOR_QEMU
 /* Werte zum testen unter QEMU */
-static constexpr unsigned int BUSY_WAIT_COUNTER = 10000000;
+static constexpr unsigned int BUSY_WAIT_COUNTER = 100000;
 #else
 /* Werte zum testen auf der Hardware */
 static constexpr unsigned int BUSY_WAIT_COUNTER = 30000;
 #endif // BUILD_FOR_QEMU
 
-static constexpr unsigned int PRINT_COUNT = 5;
+static constexpr unsigned int PRINT_COUNT = 20;
 
 // Wir testen nur mit Werten die durch 2^n darstellbar sind
 static constexpr unsigned int UART_INPUT_BUFFER_SIZE = 128;
