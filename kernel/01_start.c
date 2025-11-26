@@ -5,10 +5,10 @@
 #include <arch/cpu/cpu.h>
 #include <arch/bsp/uart.h>
 #include <arch/bsp/systimer.h>
-#include <arch/bsp/bcm2835_irq.h>
 #include <kernel/kprintf.h>
 #include <kernel/exceptions.h>
 #include <kernel/exc_triggers.h>
+#include <arch/bsp/irq.h>
 
 extern bool irq_debug;
 extern void test_kernel(void);

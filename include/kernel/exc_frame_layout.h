@@ -45,8 +45,8 @@ struct exc_frame {
     uint32_t spsr;              /* exception mode SPSR */
 };
 
-/* Compile-time layout validation (C <-> ASM ABI contract) */
 
+/* Compile-time layout validation (C <-> ASM ABI contract) */
 _Static_assert(offsetof(struct exc_frame, r[0]) == OFF_R0,
                "exc_frame: r0 offset mismatch");
 _Static_assert(offsetof(struct exc_frame, r[12]) == OFF_R12,
@@ -58,12 +58,35 @@ _Static_assert(offsetof(struct exc_frame, spsr) == OFF_SPSR,
 _Static_assert(sizeof(struct exc_frame) == EXC_FRAME_TOTAL_BYTES,
                "exc_frame: total size mismatch");
 
+               
+/**
+ * @brief Get link register from exception frame.
+ * @param f Exception frame pointer
+ * @return Link register value
+ */              
 uint32_t exc_frame_get_lr(const struct exc_frame *f);
 
+/**
+ * @brief Get stack pointer before exception.
+ * @param f Exception frame pointer
+ * @return Stack pointer value (points after the saved frame)
+ */
 uint32_t exc_frame_get_sp(const struct exc_frame *f);
 
+/**
+ * @brief Get saved program status register.
+ * @param f Exception frame pointer
+ * @return SPSR value
+ */
 uint32_t exc_frame_get_spsr(const struct exc_frame *f);
 
+/**
+ * @brief Get general-purpose register from exception frame.
+ * @param f Exception frame pointer
+ * @param i Register index (0-12 for r0-r12)
+ * @return Register value
+ */
+uint32_t exc_frame_get_r(const struct exc_frame *f, unsigned i);
 
 #endif /* !__ASSEMBLER__ */
 

@@ -1,6 +1,6 @@
 /**
  * @file bcm2835_irq.h
- * @brief BCM2835 interrupt controller register definitions and control functions.
+ * @brief BCM2835 interrupt controller register definitions.
  * @defgroup irq_bsp BCM2835 IRQ Controller BSP
  * @brief Low-level IRQ controller register access and enable helpers.
  * @{
@@ -19,7 +19,7 @@
 /** @brief Bit mask for PL011 UART interrupt. */
 #define IRQCTRL_PL011_BIT (1u << 25)
 /**
- * @struct cm2835_irqctrl_regs
+ * @struct bcm2835_irqctrl_regs
  * @brief Memory-mapped IRQ register block.
  *
  * Use @ref BCM2835_IRQCTRL to access the device instance.
@@ -41,26 +41,6 @@ _Static_assert(sizeof(struct bcm2835_irqctrl_regs)               == 0x18, "bcm28
 
 #define BCM2835_IRQCTRL ((volatile struct bcm2835_irqctrl_regs *)(uintptr_t)BCM2835_IRQCTRL_BASE_PHYS)
 
-/**
- * @brief Enable System Timer Compare 1 interrupt.
- */
-void irqctrl_enable_timer(void);
 
-/**
- * @brief Enable PL011 UART interrupt.
- */
-void irqctrl_enable_uart(void);
-
-/**
- * @brief Read pending interrupt status for bank 1.
- * @return Bitmask of pending interrupts
- */
-uint32_t irqctrl_pending1(void);
-
-/**
- * @brief Read pending interrupt status for bank2.
- * @return Bitmask of pending interrupts
- */
-uint32_t irqctrl_pending2(void);
 #endif /* BCM2835_IRQ_H */
 /** @} */ /* end of irq_bsp */

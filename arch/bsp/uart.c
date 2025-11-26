@@ -23,18 +23,31 @@
 /** @brief Ring buffer for received characters (size from config.h). */
 create_ringbuffer(ring, UART_INPUT_BUFFER_SIZE);
 
-/** @copydoc uart_irq_enable */
+/**
+ * @brief Check whether the transmit FIFO is full.
+ * @return `true` if FIFO is full, `false` otherwise.
+ */
+static inline bool pl011_tx_full(void) {
+    return (PL011->FR & FR_TXFF) != 0u;
+}
+
+/**
+ * @brief Check whether the receive FIFO is empty.
+ * @return `true` if FIFO is empty, `false` otherwise.
+ */
+static inline bool pl011_rx_empty(void){
+    return (PL011->FR & FR_RXFE) != 0u;
+}
+
 void uart_irq_enable(void) {
     PL011->ICR  = INT_RX;       /* Clear RX interrupts. */
     PL011->IMSC = INT_RX;       /* Enable RX interrupt. */
 }
 
-/** @copydoc uart_irq_rx_pending */
 bool uart_irq_rx_pending(void){
     return (PL011->MIS & INT_RX) != 0;
 }
 
-/** @copydoc uart_irq_service_rx */
 void uart_irq_service_rx(void){
     while (!pl011_rx_empty()) {
         char c = (char)(uint8_t)PL011->DR;
@@ -43,23 +56,20 @@ void uart_irq_service_rx(void){
     PL011->ICR = INT_RX;
 }
 
-/** @copydoc uart_init */
 void uart_init(void) {
     PL011->RSR_ECR = 0xFFFFFFFFu;   /* Clear all error flags */
     uart_irq_enable();
 }
-/** @copydoc uart_putc */
+
 void uart_putc(char c) {
     while (pl011_tx_full()) { /* busy wait */ }
     PL011->DR = (uint32_t)(uint8_t)c;
 }
 
-/** @copydoc uart_getc */
 char uart_getc(void) {
     return buff_getc(ring);
 }
 
-/** @copydoc uart_puts */
 void uart_puts(const char *s) {
     if (!s) {
         return;

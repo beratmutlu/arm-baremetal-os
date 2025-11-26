@@ -1,15 +1,14 @@
 
 /**
  * @file bcm2835_systimer_regs.h
- * @brief BCM2835 Systimer register map and tiny MMIO helpers.
+ * @brief BCM2835 Systimer register map.
  *
- * Defines the memory-mapped register block of the ARM BCM2835 Systimer and a few
- * minimal inline helpers for flag checks. Higher-level policy lives in systimer.c.
+ * Defines the memory-mapped register block of the ARM BCM2835 Systimer. Higher-level policy lives in systimer.c.
  * 
  */
 
  /** @defgroup systimer_bsp BCM2835 Systimer BSP (low-level)
- *  @brief Low-level BCM2835 Systimer register definitions and helpers.
+ *  @brief Low-level BCM2835 Systimer register definitions.
  *  @{
  */
 

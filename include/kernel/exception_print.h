@@ -16,12 +16,6 @@
 
 struct exc_frame;
 
-struct mode_info {
-    const char *name;
-    uint32_t mode_const;
-    bool is_current;
-};
-
 /**
  * @brief Print detailed information about an exception.
  * @param kind Type of exception

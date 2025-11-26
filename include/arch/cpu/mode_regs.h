@@ -1,16 +1,25 @@
 /**
- * @file banked_regs.h
- * @brief Access to ARM banked registers across CPU modes.
- * @defgroup banked_regs Banked Register Access
- * @brief APIs for reading banked SP, LR, SPSR, and fault registers.
- * @{
+ * @file mode_regs.h
+ * @brief CPU mode register and MMU fault register access.
  *
- * Provides a unified API to read banked SP, LR, and SPSR from
- * different CPU modes without direct mode switching.
+ * Provides a unified API to access LR, SP, SPSR, and CPSR for any ARM CPU mode,
+ * plus selected MMU fault status/address registers.
+ *
+ * For modes with banked registers (IRQ, SVC, ABT, UND), values are read from
+ * the corresponding banked registers. For the currently active mode, the
+ * helpers fall back to the unbanked SP/LR/SPSR instructions where appropriate.
+ *
+ * Typical usage in exception handlers:
+ *  - Use exc_frame_* accessors for the exception mode itself.
+ *  - Use cpu_get_banked_*() to inspect other modes without switching into them.
+ *
+ * This interface abstracts over:
+ *   - banked registers (SP_irq, LR_svc, SPSR_abt, …)
+ *   - unbanked registers (CPSR, MMU fault registers)
  */
 
-#ifndef BANKED_REGS_H
-#define BANKED_REGS_H
+#ifndef MODE_REGS_H
+#define MODE_REGS_H
 
 #include <stdint.h>
 
@@ -71,5 +80,4 @@ uint32_t mmu_get_ifsr(void);
  */
 uint32_t mmu_get_ifar(void);
 
-#endif /* BANKED_REGS_H */
-/** @} */ /* end of banked_regs */
+#endif /* MODE_REGS_H */

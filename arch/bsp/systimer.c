@@ -1,9 +1,16 @@
+/**
+ * @file systimer.c
+ * @brief BCM2835 System Timer driver implementation.
+ *
+ * Configures Compare 1 register for periodic interrupts at intervals
+ * defined by TIMER_INTERVAL. The 1MHz counter provides microsecond
+ * resolution timing.
+ */
+
 #include <stdint.h>
 #include <arch/bsp/systimer.h>
 #include <config.h>
 #include <arch/bsp/bcm2835_systimer_regs.h>
-
-
 
 
 void clear_timer_interrupt(void) {

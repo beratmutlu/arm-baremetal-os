@@ -1,15 +1,14 @@
 
 /**
  * @file bcm2835_pl011_regs.h
- * @brief PL011 UART register map and tiny MMIO helpers.
+ * @brief PL011 UART register map.
  *
- * Defines the memory-mapped register block of the ARM PL011 and a few
- * minimal inline helpers for flag checks. Higher-level policy lives in uart.c.
+ * Defines the memory-mapped register block of the ARM PL011. Higher-level policy lives in uart.c.
  * 
  */
 
  /** @defgroup uart_bsp PL011 BSP (low-level)
- *  @brief Low-level PL011 register definitions and helpers.
+ *  @brief Low-level PL011 register definitions.
  *  @{
  */
 
@@ -72,22 +71,6 @@ _Static_assert(sizeof(struct pl011_regs)            == 0x48, "PL011: struct size
  * @brief Base pointer to the UART hardware registers.
  */
 #define PL011   ((volatile struct pl011_regs *)(uintptr_t)BCM2835_PL011_BASE_PHYS)
-
-/**
- * @brief Check whether the transmit FIFO is full.
- * @return `true` if FIFO is full, `false` otherwise.
- */
-static inline bool pl011_tx_full(void) {
-    return (PL011->FR & FR_TXFF) != 0u;
-}
-
-/**
- * @brief Check whether the receive FIFO is empty.
- * @return `true` if FIFO is empty, `false` otherwise.
- */
-static inline bool pl011_rx_empty(void){
-    return (PL011->FR & FR_RXFE) != 0u;
-}
 
 #endif /* BCM2835_PL011_REGS_H */
 /** @} */ /* end of uart_bsp */

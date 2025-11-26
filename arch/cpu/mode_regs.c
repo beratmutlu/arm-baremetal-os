@@ -1,9 +1,13 @@
 /**
- * @file banked_regs.c
- * @brief Implementation of banked register accessors.
+ * @file mode_regs.c
+ * @brief Access to ARM mode-specific banked registers.
+ *
+ * Provides safe access to SP, LR, and SPSR registers across different
+ * CPU modes without requiring mode switches. Uses MRS instructions to
+ * read banked registers directly when not in the target mode.
  */
 
-#include <arch/cpu/banked_regs.h>
+#include <arch/cpu/mode_regs.h>
 #include <arch/cpu/cpu.h>
 #include <kernel/panic.h>
 

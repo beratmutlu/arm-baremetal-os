@@ -3,10 +3,18 @@
 #include <kernel/exceptions.h>
 #include <kernel/exc_frame_layout.h>
 #include <kernel/kprintf.h>
-#include <arch/cpu/banked_regs.h>
+#include <arch/cpu/mode_regs.h>
 #include <arch/cpu/cpu.h>
 
-const char* get_fsr_description(unsigned int fsr){
+/**
+ * @brief Decode fault status register value to human-readable string.
+ * @param fsr Fault Status Register value (DFSR or IFSR)
+ * @return Pointer to description string
+ *
+ * Extracts the 5-bit status field from the FSR (bits [3:0] and bit [10])
+ * and maps it to the corresponding fault type per ARM Architecture Reference Manual.
+ */
+static const char* get_fsr_description(unsigned int fsr){
     static const char *fsr_sources[] = {
         [0b00000] =  "No function, reset value",
         [0b00001] =  "Alignment fault",
@@ -45,13 +53,23 @@ const char* get_fsr_description(unsigned int fsr){
     return fsr_sources[fsr_status];
 }
 
+/**
+ * @brief Print banked registers for a specific CPU mode.
+ * @param name Display name for the mode (right-padded)
+ * @param mode CPU mode constant (e.g., CPU_IRQ, CPU_SVC)
+ * @param is_current_mode True if this is the mode where exception occurred
+ * @param frame Exception frame with saved registers
+ *
+ * Reads LR, SP, and SPSR either from the exception frame (if current mode)
+ * or from banked registers (if different mode). Prints formatted output.
+ */
 static void print_mode_regs(const char *name, uint32_t mode, 
                            bool is_current_mode,
                            const struct exc_frame *frame) {
     uint32_t lr, sp, spsr;
     
     if (is_current_mode) {
-        lr = frame->lr;
+        lr = exc_frame_get_lr(frame);
         sp = exc_frame_get_sp(frame);
         spsr = exc_frame_get_spsr(frame);
     } else {
@@ -63,6 +81,7 @@ static void print_mode_regs(const char *name, uint32_t mode,
     kprintf("\n%s| LR: 0x%08x | SP: 0x%08x | SPSR: ", name, lr, sp);
     cpu_print_psr(spsr);
 }
+
 void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     const char *name =
         (kind == EXC_UND)  ? "Undefined Instruction" :
@@ -72,7 +91,7 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
         (kind == EXC_IRQ)  ? "IRQ" : "INVALID";
 
     kprintf("############ EXCEPTION ############\n");
-    kprintf("%s an Adresse: 0x%08x\n", name, frame->lr);
+    kprintf("%s an Adresse: 0x%08x\n", name, exc_frame_get_lr(frame));
     
     if (kind == EXC_DABT) {
         uint32_t dfsr = mmu_get_dfsr();
@@ -91,11 +110,11 @@ void print_exception_infos(enum exc_kind kind, const struct exc_frame* frame) {
     }
     
     kprintf("\n>> Registerschnappschuss <<\n");
-    kprintf("R0: 0x%08x  R5: 0x%08x  R10: 0x%08x\n", frame->r[0], frame->r[5], frame->r[10]);
-    kprintf("R1: 0x%08x  R6: 0x%08x  R11: 0x%08x\n", frame->r[1], frame->r[6], frame->r[11]);
-    kprintf("R2: 0x%08x  R7: 0x%08x  R12: 0x%08x\n", frame->r[2], frame->r[7], frame->r[12]);
-    kprintf("R3: 0x%08x  R8: 0x%08x\n", frame->r[3], frame->r[8]);
-    kprintf("R4: 0x%08x  R9: 0x%08x\n", frame->r[4], frame->r[9]);
+    kprintf("R0: 0x%08x  R5: 0x%08x  R10: 0x%08x\n", exc_frame_get_r(frame, 0), exc_frame_get_r(frame, 5), exc_frame_get_r(frame, 10));
+    kprintf("R1: 0x%08x  R6: 0x%08x  R11: 0x%08x\n", exc_frame_get_r(frame, 1), exc_frame_get_r(frame, 6), exc_frame_get_r(frame, 11));
+    kprintf("R2: 0x%08x  R7: 0x%08x  R12: 0x%08x\n", exc_frame_get_r(frame, 2), exc_frame_get_r(frame, 7), exc_frame_get_r(frame, 12));
+    kprintf("R3: 0x%08x  R8: 0x%08x\n", exc_frame_get_r(frame, 3), exc_frame_get_r(frame, 8));
+    kprintf("R4: 0x%08x  R9: 0x%08x\n", exc_frame_get_r(frame, 4), exc_frame_get_r(frame, 9));
     
     kprintf("\n>> Modusspezifische Register <<\n");
     

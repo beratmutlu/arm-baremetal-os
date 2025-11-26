@@ -1,11 +1,11 @@
+
 /**
  * @file systimer.h
  * @brief BCM2835 System Timer driver API.
  * @defgroup systimer_api System Timer API
- * @brief High-level System Timer control functions.
+ * @brief High-level System Timer control functions built on the Systimer BSP.
  * @{
  */
-
 #ifndef SYSTIMER_H
 #define SYSTIMER_H
 
