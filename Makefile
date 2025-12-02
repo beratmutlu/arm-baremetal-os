@@ -99,7 +99,7 @@ endif
 LDFLAGS =
 
 # Hier den git branch angeben, der für die Abgabe benutzt werden soll
-SUBMISSION_BRANCH = a2-exceptions-ivt-irq-systimer
+SUBMISSION_BRANCH = a3_from_a2
 
 # Wenn ihr zuhause auf der Hardware arbeitet, hier das TFTP-Verzeichnis eintragen
 TFTP_PATH = /srv/tftp
