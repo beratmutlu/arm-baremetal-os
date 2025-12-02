@@ -24,7 +24,8 @@ static thread_t *current_thread = NULL;
 list_create(ready_queue);
 
 static void idle_func(void *arg) {
-    while (1) {
+    arg = NULL;
+    while (!arg) {
         asm volatile ("wfi");
     }
 }
