@@ -49,7 +49,7 @@ void svc_handler_c(struct exc_frame *frame) {
 
 void pabt_handler_c(struct exc_frame *frame) {
     if (is_user_mode(frame->spsr)) {
-        print_exception_infos(EXC_UND, frame);
+        print_exception_infos(EXC_PABT, frame);
         scheduler_on_thread_exit(frame);
     } else {
         print_exception_infos(EXC_PABT, frame);
@@ -60,7 +60,7 @@ void pabt_handler_c(struct exc_frame *frame) {
 
 void dabt_handler_c(struct exc_frame *frame) {
     if (is_user_mode(frame->spsr)) {
-        print_exception_infos(EXC_UND, frame);
+        print_exception_infos(EXC_DABT, frame);
         scheduler_on_thread_exit(frame);
     } else {
         print_exception_infos(EXC_DABT, frame);
