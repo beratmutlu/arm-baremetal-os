@@ -16,7 +16,7 @@ extern void syscall_exit(void);
 static thread_t *node_to_thread(list_node *node) {
     return container_of(node, thread_t, runq_node);
 }
-#define USER_MODE_PSR 0x60000010
+#define USER_MODE_PSR (CPU_USR)
 
 static thread_t *idle_thread = NULL;
 static thread_t *current_thread = NULL;
@@ -128,7 +128,7 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *), const void
 void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size) {
     thread_t *thread = scheduler_thread_create_helper(func, arg, arg_size);
     if (!thread) {
-        kprintf("Could not create thread.\n");
+        kprintf("Could not create thread.");
         return;
     }
     scheduler_enqueue_ready(thread);

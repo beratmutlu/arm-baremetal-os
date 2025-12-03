@@ -90,9 +90,6 @@ void irq_handler_c(struct exc_frame *frame) {
             char c = uart_getc();
             switch (c)
             {
-            case 'd':
-                irq_debug = !irq_debug;
-                break;
             case 'S':
                 do_svc();
                 break;
