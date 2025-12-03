@@ -16,7 +16,7 @@ extern void syscall_exit(void);
 static thread_t *node_to_thread(list_node *node) {
     return container_of(node, thread_t, runq_node);
 }
-#define USER_MODE_PSR (CPU_USR)
+#define USER_MODE_PSR 0x60000010
 
 static thread_t *idle_thread = NULL;
 static thread_t *current_thread = NULL;
