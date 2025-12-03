@@ -91,16 +91,16 @@ void irq_handler_c(struct exc_frame *frame) {
             switch (c)
             {
             case 'S':
-                do_svc();
+                scheduler_thread_create(thread_trigger_svc, NULL, 0);
                 break;
             case 'P':
-                do_prefetch_abort();
+                scheduler_thread_create(thread_trigger_pabt, NULL, 0);
                 break;
             case 'A':
-                do_data_abort();
+                scheduler_thread_create(thread_trigger_dabt, NULL, 0);
                 break;
             case 'U':
-                do_undefined_inst();
+                scheduler_thread_create(thread_trigger_undef, NULL, 0);
                 break;
             default:
                 scheduler_thread_create(main, &c, sizeof(c));
