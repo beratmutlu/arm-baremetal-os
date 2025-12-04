@@ -54,23 +54,4 @@ static inline void do_undef(void) {
     asm volatile(".word 0xE7F000F0");
 }
 
-static inline void thread_trigger_svc(void *arg) {
-    (void)arg;
-    do_svc();
-}
-
-static inline void thread_trigger_pabt(void *arg) {
-    (void)arg;
-    do_prefetch_abort();  
-}
-
-static inline void thread_trigger_dabt(void *arg) {
-    (void)arg;
-    do_data_abort();  
-}
-
-static inline void thread_trigger_undef(void *arg) {
-    (void)arg;
-    do_undef();  
-}
 #endif /* EXC_TRIGGERS_H */
