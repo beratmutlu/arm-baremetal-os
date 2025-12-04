@@ -159,14 +159,16 @@ void scheduler_on_timer(struct exc_frame *frame) {
     current_thread->state = THREAD_RUNNING;
     restore_frame_from_context(current_thread, frame);
 
-    if (prev != next) {
+    if (!next->is_idle &&prev != next) {
         kprintf("\n");
     }
 }
 
 void scheduler_on_thread_exit(struct exc_frame *frame) {
     save_context_from_frame(frame, current_thread);
-    current_thread->state = THREAD_ZOMBIE;
+    
+    thread_t *zombie = current_thread;  
+    zombie->state = THREAD_ZOMBIE;     
 
     thread_t *next = scheduler_pick_next();
     if (!next) {
@@ -175,6 +177,13 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
 
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
-    kprintf("\n");
+    
+    if (!zombie->is_idle) {             
+        thread_free(zombie);
+        if (!current_thread->is_idle) {
+            kprintf("\n");
+        }
+         
+    }                                
     restore_frame_from_context(current_thread, frame);
 }
