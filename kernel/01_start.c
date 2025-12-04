@@ -13,7 +13,6 @@
 #include <kernel/scheduler.h>
 
 extern bool irq_debug;
-extern void test_kernel(void);
 extern void register_checker(void);
 
 
@@ -27,13 +26,11 @@ void start_kernel[[noreturn]](void) {
     irqctrl_enable_uart();
     irqctrl_enable_timer();
     
-    threads_init();
-    scheduler_init();
-
-
     cpu_irq_enable();
     kprintf("=== Betriebssystem gestartet ===\n");
     test_kernel();
+    threads_init();
+    scheduler_init();
     scheduler_start();
     while(true) {
         asm volatile("wfi");
