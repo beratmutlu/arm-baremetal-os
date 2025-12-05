@@ -17,7 +17,7 @@ static thread_t *node_to_thread(list_node *node) {
     return container_of(node, thread_t, runq_node);
 }
 #define USER_MODE_PSR 0x00000010
-
+#define KERNEL_MODE_PSR_IRQ_ENABLE 0x0000001F
 static thread_t *idle_thread = NULL;
 static thread_t *current_thread = NULL;
 
@@ -185,6 +185,7 @@ void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg
 void scheduler_init(void) {
     idle_thread = scheduler_thread_create_helper(idle_func, NULL, 0);
     idle_thread->is_idle = true;
+    idle_thread->ctx.psr = KERNEL_MODE_PSR_IRQ_ENABLE;
 }
 
 void scheduler_on_timer(struct exc_frame *frame) {
