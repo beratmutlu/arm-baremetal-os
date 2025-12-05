@@ -16,7 +16,6 @@ extern bool irq_debug;
 extern void register_checker(void);
 
 
-
 void start_kernel[[noreturn]](void);
 void start_kernel[[noreturn]](void) {
     uart_init();
@@ -32,9 +31,9 @@ void start_kernel[[noreturn]](void) {
     cpu_irq_enable();
 
     kprintf("=== Betriebssystem gestartet ===\n");
+
     test_kernel();
     scheduler_start();
-    while(true) {
-        asm volatile("wfi");
-    }
+
+    __builtin_unreachable();
 }

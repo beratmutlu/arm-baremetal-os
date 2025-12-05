@@ -10,7 +10,7 @@
 #include <user/syscall.h>
 
 extern void syscall_exit(void);
-
+extern void scheduler_start_asm(struct exc_frame *frame);
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 
 static thread_t *node_to_thread(list_node *node) {
@@ -89,6 +89,11 @@ void scheduler_start(void) {
         next = idle_thread;
     }
     current_thread = next;
+    current_thread->state = THREAD_RUNNING;
+
+    struct exc_frame frame;
+    restore_frame_from_context(current_thread, &frame);
+    scheduler_start_asm(&frame);
 }
 
 static thread_t *scheduler_thread_create_helper(void (*func)(void *), const void *arg, unsigned arg_size) {
