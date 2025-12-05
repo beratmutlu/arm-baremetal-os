@@ -82,11 +82,7 @@ static inline void restore_frame_from_context(const thread_t *thread,
 
     frame->spsr = thread->ctx.psr;
 
-    if (to_irq) {
-        frame->lr = thread->ctx.pc + 4;
-    } else {
-        frame->lr = thread->ctx.pc;
-    }
+    frame->lr = thread->ctx.pc;
 
     cpu_set_banked_sp(CPU_USR, thread->ctx.sp);
     cpu_set_banked_lr(CPU_USR, thread->ctx.lr);
