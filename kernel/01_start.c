@@ -28,10 +28,10 @@ void start_kernel[[noreturn]](void) {
     threads_init();
     scheduler_init();
 
-    cpu_irq_enable();
+    
 
     kprintf("=== Betriebssystem gestartet ===\n");
-
+    cpu_irq_enable();
     test_kernel();
     scheduler_start();
 
