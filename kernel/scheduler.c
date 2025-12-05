@@ -83,19 +83,8 @@ static inline void restore_frame_from_context(const thread_t *thread,
     frame->spsr = thread->ctx.psr;
 
     if (to_irq) {
-        /*
-         * We are going to return through irq_tramp (EXC_EXIT 4):
-         *   PC = LR - 4
-         * So we must set LR = resume_pc + 4.
-         */
         frame->lr = thread->ctx.pc + 4;
     } else {
-        /*
-         * We are going to return through SVC/ABT/UND trampolines
-         * using EXC_EXIT 0:
-         *   PC = LR
-         * So LR = resume_pc.
-         */
         frame->lr = thread->ctx.pc;
     }
 
