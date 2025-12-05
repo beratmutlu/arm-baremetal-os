@@ -16,7 +16,7 @@ extern void scheduler_start_asm(struct exc_frame *frame);
 static thread_t *node_to_thread(list_node *node) {
     return container_of(node, thread_t, runq_node);
 }
-#define USER_MODE_PSR 0x60000010
+#define USER_MODE_PSR 0x00000010
 
 static thread_t *idle_thread = NULL;
 static thread_t *current_thread = NULL;
@@ -30,7 +30,10 @@ static void idle_func(void *arg) {
     }
 }
 
-static inline void save_context_from_frame(const struct exc_frame *frame, thread_t *thread) {
+static inline void save_context_from_frame(const struct exc_frame *frame,
+                                           thread_t *thread,
+                                           bool from_irq)
+{
     if (!thread || !frame) {
         return;
     }
@@ -40,13 +43,35 @@ static inline void save_context_from_frame(const struct exc_frame *frame, thread
     }
 
     thread->ctx.psr = frame->spsr;
-    thread->ctx.pc = frame->lr;
+
+    if (from_irq) {
+        /*
+         * IRQ path:
+         *   On entry: LR_irq = interrupted_pc + 4
+         *   irq_tramp uses EXC_EXIT 4: PC = LR - 4
+         * So resume_pc = frame->lr - 4.
+         */
+        thread->ctx.pc = frame->lr - 4;
+    } else {
+        /*
+         * Synchronous exceptions (SVC/ABT/UND) where EXC_EXIT 0 is used:
+         *   EXC_EXIT 0: PC = LR
+         * So resume_pc = frame->lr.
+         *
+         * Note: for exiting threads we never use this pc again,
+         * but keep this for completeness.
+         */
+        thread->ctx.pc = frame->lr;
+    }
 
     thread->ctx.sp = cpu_get_banked_sp(CPU_USR);
     thread->ctx.lr = cpu_get_banked_lr(CPU_USR);
 }
 
-static inline void restore_frame_from_context(const thread_t *thread, struct exc_frame *frame) {
+static inline void restore_frame_from_context(const thread_t *thread,
+                                              struct exc_frame *frame,
+                                              bool to_irq)
+{
     if (!thread || !frame) {
         return;
     }
@@ -56,11 +81,28 @@ static inline void restore_frame_from_context(const thread_t *thread, struct exc
     }
 
     frame->spsr = thread->ctx.psr;
-    frame->lr = thread->ctx.pc;
+
+    if (to_irq) {
+        /*
+         * We are going to return through irq_tramp (EXC_EXIT 4):
+         *   PC = LR - 4
+         * So we must set LR = resume_pc + 4.
+         */
+        frame->lr = thread->ctx.pc + 4;
+    } else {
+        /*
+         * We are going to return through SVC/ABT/UND trampolines
+         * using EXC_EXIT 0:
+         *   PC = LR
+         * So LR = resume_pc.
+         */
+        frame->lr = thread->ctx.pc;
+    }
 
     cpu_set_banked_sp(CPU_USR, thread->ctx.sp);
     cpu_set_banked_lr(CPU_USR, thread->ctx.lr);
 }
+
 
 static inline void scheduler_enqueue_ready(thread_t *thread) {
     if (!thread) {
@@ -92,9 +134,10 @@ void scheduler_start(void) {
     current_thread->state = THREAD_RUNNING;
 
     struct exc_frame frame;
-    restore_frame_from_context(current_thread, &frame);
+    restore_frame_from_context(current_thread, &frame, false);
     scheduler_start_asm(&frame);
 }
+
 
 static thread_t *scheduler_thread_create_helper(void (*func)(void *), const void *arg, unsigned arg_size) {
     thread_t *thread = thread_alloc();
@@ -121,7 +164,7 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *), const void
 
     thread->ctx.r[0] = (uint32_t)arg_copy_ptr;
 
-    thread->ctx.pc = (uint32_t)func + 4;
+    thread->ctx.pc = (uint32_t)func;
     thread->ctx.lr = (uint32_t)syscall_exit;
 
     thread->ctx.psr = USER_MODE_PSR;
@@ -148,13 +191,13 @@ void scheduler_on_timer(struct exc_frame *frame) {
     thread_t *prev = current_thread;
 
     if (current_thread && current_thread->state == THREAD_RUNNING) {
-        save_context_from_frame(frame, current_thread);
+        save_context_from_frame(frame, current_thread, true);
         if (!current_thread->is_idle) {
             current_thread->state = THREAD_READY;
             scheduler_enqueue_ready(current_thread);
         }
-        
     }
+
     thread_t *next = scheduler_pick_next();
     if (!next) {
         next = idle_thread;
@@ -162,18 +205,18 @@ void scheduler_on_timer(struct exc_frame *frame) {
 
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
-    restore_frame_from_context(current_thread, frame);
 
-    if (!next->is_idle &&prev != next) {
+    restore_frame_from_context(current_thread, frame, true);
+
+    if (!next->is_idle && prev != next) {
         kprintf("\n");
     }
 }
-
 void scheduler_on_thread_exit(struct exc_frame *frame) {
-    save_context_from_frame(frame, current_thread);
+    save_context_from_frame(frame, current_thread, false);
     
-    thread_t *zombie = current_thread;  
-    zombie->state = THREAD_ZOMBIE;     
+    thread_t *zombie = current_thread;
+    zombie->state = THREAD_ZOMBIE;
 
     thread_t *next = scheduler_pick_next();
     if (!next) {
@@ -183,12 +226,13 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
     
-    if (!zombie->is_idle) {             
+    if (!zombie->is_idle) {
         thread_free(zombie);
         if (!current_thread->is_idle) {
             kprintf("\n");
         }
-         
-    }                                
-    restore_frame_from_context(current_thread, frame);
+    }
+
+
+    restore_frame_from_context(current_thread, frame, false);
 }
