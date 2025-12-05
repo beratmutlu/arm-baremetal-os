@@ -77,7 +77,7 @@ void irq_handler_c(struct exc_frame *frame) {
     }
     
     if (pending1 & IRQCTRL_TIMER_C1_BIT) {
-        kprintf("!");
+        uart_putc('!');
         clear_timer_interrupt();
         set_next_timer_interrupt();
         scheduler_on_timer(frame);

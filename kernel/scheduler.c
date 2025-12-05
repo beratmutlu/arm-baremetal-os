@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <kernel/kprintf.h>
 #include <user/syscall.h>
-
+#include <arch/bsp/uart.h>
 extern void syscall_exit(void);
 extern void scheduler_start_asm(struct exc_frame *frame);
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
@@ -209,7 +209,7 @@ void scheduler_on_timer(struct exc_frame *frame) {
     restore_frame_from_context(current_thread, frame, true);
 
     if (!next->is_idle && prev != next) {
-        kprintf("\n");
+        uart_putc('\n');
     }
 }
 void scheduler_on_thread_exit(struct exc_frame *frame) {
@@ -229,7 +229,7 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
     if (!zombie->is_idle) {
         thread_free(zombie);
         if (!current_thread->is_idle) {
-            kprintf("\n");
+            uart_putc('\n');
         }
     }
 
