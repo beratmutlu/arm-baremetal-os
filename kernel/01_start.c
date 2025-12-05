@@ -31,7 +31,6 @@ void start_kernel[[noreturn]](void) {
     
 
     kprintf("=== Betriebssystem gestartet ===\n");
-    //cpu_irq_enable();
     test_kernel();
     scheduler_start();
 
