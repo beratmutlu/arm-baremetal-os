@@ -30,10 +30,10 @@ void start_kernel[[noreturn]](void) {
     scheduler_init();
 
     cpu_irq_enable();
-    scheduler_start();
+
     kprintf("=== Betriebssystem gestartet ===\n");
     test_kernel();
-
+    scheduler_start();
     while(true) {
         asm volatile("wfi");
     }
