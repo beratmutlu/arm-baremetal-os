@@ -31,8 +31,7 @@ static void idle_func(void *arg) {
 }
 
 static inline void save_context_from_frame(const struct exc_frame *frame,
-                                           thread_t *thread,
-                                           bool from_irq)
+                                           thread_t *thread)
 {
     if (!thread || !frame) {
         return;
@@ -44,33 +43,14 @@ static inline void save_context_from_frame(const struct exc_frame *frame,
 
     thread->ctx.psr = frame->spsr;
 
-    if (from_irq) {
-        /*
-         * IRQ path:
-         *   On entry: LR_irq = interrupted_pc + 4
-         *   irq_tramp uses EXC_EXIT 4: PC = LR - 4
-         * So resume_pc = frame->lr - 4.
-         */
-        thread->ctx.pc = frame->lr - 4;
-    } else {
-        /*
-         * Synchronous exceptions (SVC/ABT/UND) where EXC_EXIT 0 is used:
-         *   EXC_EXIT 0: PC = LR
-         * So resume_pc = frame->lr.
-         *
-         * Note: for exiting threads we never use this pc again,
-         * but keep this for completeness.
-         */
-        thread->ctx.pc = frame->lr;
-    }
+    thread->ctx.pc = frame->lr;
 
     thread->ctx.sp = cpu_get_banked_sp(CPU_USR);
     thread->ctx.lr = cpu_get_banked_lr(CPU_USR);
 }
 
 static inline void restore_frame_from_context(const thread_t *thread,
-                                              struct exc_frame *frame,
-                                              bool to_irq)
+                                              struct exc_frame *frame)
 {
     if (!thread || !frame) {
         return;
@@ -119,7 +99,7 @@ void scheduler_start(void) {
     current_thread->state = THREAD_RUNNING;
 
     struct exc_frame frame;
-    restore_frame_from_context(current_thread, &frame, false);
+    restore_frame_from_context(current_thread, &frame);
     scheduler_start_asm(&frame);
 }
 
@@ -177,7 +157,7 @@ void scheduler_on_timer(struct exc_frame *frame) {
     thread_t *prev = current_thread;
 
     if (current_thread && current_thread->state == THREAD_RUNNING) {
-        save_context_from_frame(frame, current_thread, true);
+        save_context_from_frame(frame, current_thread);
         if (!current_thread->is_idle) {
             current_thread->state = THREAD_READY;
             scheduler_enqueue_ready(current_thread);
@@ -192,14 +172,14 @@ void scheduler_on_timer(struct exc_frame *frame) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
 
-    restore_frame_from_context(current_thread, frame, true);
+    restore_frame_from_context(current_thread, frame);
 
     if (!next->is_idle && prev != next) {
         uart_putc('\n');
     }
 }
 void scheduler_on_thread_exit(struct exc_frame *frame) {
-    save_context_from_frame(frame, current_thread, false);
+    save_context_from_frame(frame, current_thread);
     
     thread_t *zombie = current_thread;
     zombie->state = THREAD_ZOMBIE;
@@ -220,5 +200,5 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
     }
 
 
-    restore_frame_from_context(current_thread, frame, false);
+    restore_frame_from_context(current_thread, frame);
 }
