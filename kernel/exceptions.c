@@ -112,7 +112,6 @@ void irq_handler_c(struct exc_frame *frame) {
                 thread_t *cur = scheduler_get_current_thread();
                 if (cur->is_idle == true) {
                     scheduler_on_timer(frame);
-                    clear_timer_interrupt();
                     set_next_timer_interrupt();
                     uart_putc('!');
                 }
