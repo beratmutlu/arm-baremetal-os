@@ -18,7 +18,6 @@ void und_handler_c(struct exc_frame *frame) {
 
     if (is_user_mode(frame->spsr)) {
         print_exception_infos(EXC_UND, frame);
-        asm volatile("cpsie i");
         scheduler_on_thread_exit(frame);
     } else {
         print_exception_infos(EXC_UND, frame);
@@ -38,12 +37,10 @@ void svc_handler_c(struct exc_frame *frame) {
     switch (nr)
     {
     case 0:
-        asm volatile("cpsie i");
         scheduler_on_thread_exit(frame);
         break;
     
     default:
-        asm volatile("cpsie i");
         scheduler_on_thread_exit(frame);
         break;
     }
@@ -53,7 +50,6 @@ void svc_handler_c(struct exc_frame *frame) {
 void pabt_handler_c(struct exc_frame *frame) {
     if (is_user_mode(frame->spsr)) {
         print_exception_infos(EXC_PABT, frame);
-        asm volatile("cpsie i");
         scheduler_on_thread_exit(frame);
     } else {
         print_exception_infos(EXC_PABT, frame);
@@ -65,7 +61,6 @@ void pabt_handler_c(struct exc_frame *frame) {
 void dabt_handler_c(struct exc_frame *frame) {
     if (is_user_mode(frame->spsr)) {
         print_exception_infos(EXC_DABT, frame);
-        asm volatile("cpsie i");
         scheduler_on_thread_exit(frame);
     } else {
         print_exception_infos(EXC_DABT, frame);
@@ -109,13 +104,6 @@ void irq_handler_c(struct exc_frame *frame) {
                 break;
             default:
                 scheduler_thread_create(main, &c, sizeof(c));
-                thread_t *cur = scheduler_get_current_thread();
-                if (cur->is_idle == true) {
-                    scheduler_on_timer(frame);
-                    clear_timer_interrupt();
-                    set_next_timer_interrupt();
-                    uart_putc('!');
-                }
                 break;
             }
         } 

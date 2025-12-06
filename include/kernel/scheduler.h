@@ -14,5 +14,4 @@ void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg
 
 void scheduler_on_thread_exit(struct exc_frame *frame);
 
-thread_t *scheduler_get_current_thread(void);
 #endif

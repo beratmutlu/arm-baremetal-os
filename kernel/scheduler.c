@@ -202,7 +202,3 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
 
     restore_frame_from_context(current_thread, frame);
 }
-
-thread_t *scheduler_get_current_thread(void) {
-    return current_thread;
-}
