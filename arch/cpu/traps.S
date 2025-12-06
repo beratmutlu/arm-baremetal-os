@@ -56,24 +56,28 @@
 .global und_tramp, svc_tramp, pabt_tramp, dabt_tramp, irq_tramp
 
 und_tramp:
+    CPSID I
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      und_handler_c
     EXC_EXIT 0
 svc_tramp:
+    CPSID I
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      svc_handler_c
     EXC_EXIT 0
 pabt_tramp:
+    CPSID I
     SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      pabt_handler_c
     EXC_EXIT 0
 dabt_tramp:
+    CPSID I
     SUB     LR, LR, #8
     EXC_ENTRY
     MOV     R0, SP
