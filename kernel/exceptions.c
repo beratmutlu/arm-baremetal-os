@@ -12,7 +12,7 @@
 #include <kernel/syscall.h>
 #include <user/main.h>
 #include <kernel/exc_triggers.h>
-#include <lib/ringbuffer.h>
+
 bool irq_debug = false;
 
 void und_handler_c(struct exc_frame *frame) {
