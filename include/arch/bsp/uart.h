@@ -24,6 +24,9 @@
  */
 void uart_init(void);
 
+
+bool is_ring_empty();
+
 /**
  * @brief Blocking read of one byte.
  * @return The received character.

@@ -12,6 +12,7 @@
 #include <kernel/syscall.h>
 #include <user/main.h>
 #include <kernel/exc_triggers.h>
+#include <lib/ringbuffer.h>
 bool irq_debug = false;
 
 void und_handler_c(struct exc_frame *frame) {
@@ -86,25 +87,27 @@ void irq_handler_c(struct exc_frame *frame) {
     if (pending2 & IRQCTRL_PL011_BIT) {
         if (uart_irq_rx_pending()) {
             uart_irq_service_rx();
-
-            char c = uart_getc();
-            switch (c)
-            {
-            case 'S':
-                do_svc();
-                break;
-            case 'P':
-                do_prefetch_abort();
-                break;
-            case 'A':
-                do_data_abort();
-                break;
-            case 'U':
-                do_undefined_inst();
-                break;
-            default:
-                scheduler_thread_create(main, &c, sizeof(c));
-                break;
+            
+            while (!is_ring_empty()) {
+                char c = uart_getc();
+                switch (c)
+                {
+                case 'S':
+                    do_svc();
+                    break;
+                case 'P':
+                    do_prefetch_abort();
+                    break;
+                case 'A':
+                    do_data_abort();
+                    break;
+                case 'U':
+                    do_undefined_inst();
+                    break;
+                default:
+                    scheduler_thread_create(main, &c, sizeof(c));
+                    break;
+                }
             }
         } 
     }

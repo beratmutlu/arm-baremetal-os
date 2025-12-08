@@ -34,6 +34,10 @@ bool uart_irq_rx_pending(void){
     return (PL011->MIS & INT_RX) != 0;
 }
 
+bool is_ring_empty() {
+    return buff_is_empty(ring);
+}
+
 /** @copydoc uart_irq_service_rx */
 void uart_irq_service_rx(void){
     while (!pl011_rx_empty()) {
