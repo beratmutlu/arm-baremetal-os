@@ -9,7 +9,7 @@ void _panic [[noreturn]] (const char *func_name, const char *msg) {
 
     kprintf("KERNEL PANIC in %s: %s\n", func_name, msg);
     kprintf("System halted.\n");
-
+    uart_putc('\4');
     while (true)
     {
         asm volatile("wfi");
