@@ -106,11 +106,9 @@ void irq_handler_c(struct exc_frame *frame) {
                     break;
                 default:
                     scheduler_thread_create(main, &c, sizeof(c));
-                    /*
                     if (scheduler_curr()->is_idle) {
                         scheduler_on_timer(frame);
                     }
-                    */
                     break;
                 }
             }
