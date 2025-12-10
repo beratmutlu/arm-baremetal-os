@@ -70,10 +70,10 @@ static inline void restore_frame_from_context(const thread_t *thread,
 
 
 static inline void scheduler_enqueue_ready(thread_t *thread) {
-    if (!thread) {
+    if (!thread || thread->is_idle || thread->in_runq) {
         return;
     }
-
+    thread->in_runq = true;
     thread->state = THREAD_READY;
     list_add_last(ready_queue, &thread->runq_node);
 }
@@ -85,7 +85,7 @@ static inline thread_t *scheduler_pick_next(void) {
     }
 
     thread_t *thread_next = node_to_thread(next);
-
+    thread_next->in_runq =false;
 
     return thread_next;
 }
@@ -102,7 +102,7 @@ void scheduler_start(void) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
 
-    struct exc_frame frame;
+    struct exc_frame frame = {0};
     restore_frame_from_context(current_thread, &frame);
     scheduler_start_asm(&frame);
 }
@@ -183,8 +183,6 @@ void scheduler_on_timer(struct exc_frame *frame) {
     }
 }
 void scheduler_on_thread_exit(struct exc_frame *frame) {
-    save_context_from_frame(frame, current_thread);
-    
     thread_t *zombie = current_thread;
     zombie->state = THREAD_ZOMBIE;
 

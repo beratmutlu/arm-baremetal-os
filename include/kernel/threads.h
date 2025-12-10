@@ -38,6 +38,7 @@ struct thread {
     uint32_t stack_size;
     thread_t *next_free;
     bool is_idle;
+    bool in_runq;
 };
 
 void threads_init(void);
