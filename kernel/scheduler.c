@@ -90,6 +90,10 @@ static inline thread_t *scheduler_pick_next(void) {
     return thread_next;
 }
 
+thread_t *scheduler_curr(void) {
+    return current_thread;
+}
+
 void scheduler_start(void) {
     thread_t *next = scheduler_pick_next();
     if (!next) {
