@@ -83,7 +83,7 @@ irq_tramp:
     EXC_ENTRY
     MOV     R0, SP
     BL      irq_handler_c
-    EXC_EXIT 0
+    EXC_EXIT 4
 
 .global scheduler_start_asm
 scheduler_start_asm:
