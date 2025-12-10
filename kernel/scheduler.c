@@ -7,7 +7,7 @@
 #include <arch/cpu/cpu.h>
 #include <stdint.h>
 #include <kernel/kprintf.h>
-#include <user/syscall.h>
+#include <user/syscalls.h>
 #include <arch/bsp/uart.h>
 extern void syscall_exit(void);
 extern void scheduler_start_asm(struct exc_frame *frame);
@@ -130,7 +130,7 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *),
     thread->ctx.sp  = (uint32_t)(uintptr_t)sp8;   
     thread->ctx.r[0]= (uint32_t)(uintptr_t)arg_ptr; 
 
-    thread->ctx.pc  = (uint32_t)func + 4;       
+    thread->ctx.pc  = (uint32_t)(uintptr_t)func;   
     thread->ctx.lr  = (uint32_t)syscall_exit;
     thread->ctx.psr = USER_MODE_PSR;
 

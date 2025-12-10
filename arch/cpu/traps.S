@@ -80,10 +80,11 @@ dabt_tramp:
     BL      dabt_handler_c
     EXC_EXIT 0
 irq_tramp:
+    SUB     LR, LR, #4
     EXC_ENTRY
     MOV     R0, SP
     BL      irq_handler_c
-    EXC_EXIT 4
+    EXC_EXIT 0
 
 .global scheduler_start_asm
 scheduler_start_asm:
