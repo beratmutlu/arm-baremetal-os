@@ -175,7 +175,7 @@ void scheduler_on_timer(struct exc_frame *frame) {
 
     restore_frame_from_context(current_thread, frame);
 
-    if (prev != next && !prev->is_idle && !next->is_idle) {
+    if (prev != next) {
         uart_putc('\n');
     }
 }
