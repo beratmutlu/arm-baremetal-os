@@ -107,40 +107,37 @@ void scheduler_start(void) {
     scheduler_start_asm(&frame);
 }
 
-
-static thread_t *scheduler_thread_create_helper(void (*func)(void *), const void *arg, unsigned arg_size) {
+static thread_t *scheduler_thread_create_helper(void (*func)(void *),
+                                                const void *arg,
+                                                unsigned arg_size)
+{
     thread_t *thread = thread_alloc();
-    if (!thread) {
-        return NULL;
-    }
-    thread->state = THREAD_READY;
-
-    uint8_t *sp8 = thread->stack + thread->stack_size;
-    
-    void *arg_copy_ptr = NULL;
-    if (arg && arg_size > 0) {
-        sp8 -= arg_size;
-        memcpy(sp8, arg, arg_size);
-        arg_copy_ptr = (void *)sp8;
-    }
-
-    sp8 = (uint8_t *)((uintptr_t)sp8 & ~0x7);
-    uint32_t *sp = (uint32_t *)sp8;
+    if (!thread) return NULL;
 
     memset(&thread->ctx, 0, sizeof(thread->ctx));
-    
-    thread->ctx.sp = (uint32_t)sp;
 
-    thread->ctx.r[0] = (uint32_t)arg_copy_ptr;
+    uint8_t *sp8 = thread->stack + thread->stack_size;
+    sp8 = (uint8_t *)((uintptr_t)sp8 & ~0x7); 
 
-    thread->ctx.pc = (uint32_t)func + 4;
-    thread->ctx.lr = (uint32_t)syscall_exit;
+    void *arg_ptr = NULL;
+    if (arg && arg_size > 0) {
+        unsigned total = (arg_size + 7u) & ~7u;  
+        sp8 -= total;                            
+        memcpy(sp8, arg, arg_size);            
+        arg_ptr = sp8;
+    }
 
+    thread->ctx.sp  = (uint32_t)(uintptr_t)sp8;   
+    thread->ctx.r[0]= (uint32_t)(uintptr_t)arg_ptr; 
+
+    thread->ctx.pc  = (uint32_t)func + 4;       
+    thread->ctx.lr  = (uint32_t)syscall_exit;
     thread->ctx.psr = USER_MODE_PSR;
-    
-    
+
+    thread->state = THREAD_READY;
     return thread;
 }
+
 
 void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size) {
     thread_t *thread = scheduler_thread_create_helper(func, arg, arg_size);
