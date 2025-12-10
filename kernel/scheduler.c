@@ -133,7 +133,7 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *), const void
 
     thread->ctx.r[0] = (uint32_t)arg_copy_ptr;
 
-    thread->ctx.pc = (uint32_t)func;
+    thread->ctx.pc = (uint32_t)func + 4;
     thread->ctx.lr = (uint32_t)syscall_exit;
 
     thread->ctx.psr = USER_MODE_PSR;
