@@ -20,6 +20,7 @@ void und_handler_c(struct exc_frame *frame) {
     if (is_user_mode(frame->spsr)) {
         print_exception_infos(EXC_UND, frame);
         scheduler_on_thread_exit(frame);
+        set_next_timer_interrupt();
     } else {
         print_exception_infos(EXC_UND, frame);
         panic("Undefined Instruction in kernel mode");
@@ -39,6 +40,7 @@ void svc_handler_c(struct exc_frame *frame) {
     {
     case 0:
         scheduler_on_thread_exit(frame);
+        set_next_timer_interrupt();
         break;
     
     default:
@@ -52,6 +54,7 @@ void pabt_handler_c(struct exc_frame *frame) {
     if (is_user_mode(frame->spsr)) {
         print_exception_infos(EXC_PABT, frame);
         scheduler_on_thread_exit(frame);
+        set_next_timer_interrupt();
     } else {
         print_exception_infos(EXC_PABT, frame);
         panic("Prefetch Abort in kernel mode");
@@ -63,6 +66,7 @@ void dabt_handler_c(struct exc_frame *frame) {
     if (is_user_mode(frame->spsr)) {
         print_exception_infos(EXC_DABT, frame);
         scheduler_on_thread_exit(frame);
+        set_next_timer_interrupt();
     } else {
         print_exception_infos(EXC_DABT, frame);
         panic("Data Abort in kernel mode");
@@ -106,11 +110,10 @@ void irq_handler_c(struct exc_frame *frame) {
                     break;
                 default:
                     scheduler_thread_create(main, &c, sizeof(c));
-                    /*
                     if (scheduler_curr()->is_idle) {
                         scheduler_on_timer(frame);
+                        set_next_timer_interrupt();
                     }
-                    */
                     break;
                 }
             }
