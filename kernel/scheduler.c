@@ -142,7 +142,7 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *),
 void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size) {
     thread_t *thread = scheduler_thread_create_helper(func, arg, arg_size);
     if (!thread) {
-        kprintf("Could not create thread.\n");
+        kprintf("Could not create thread.");
         return;
     }
     scheduler_enqueue_ready(thread);
