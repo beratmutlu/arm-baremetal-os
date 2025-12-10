@@ -119,7 +119,7 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *),
     uint8_t *sp8 = thread->stack + thread->stack_size;
     sp8 = (uint8_t *)((uintptr_t)sp8 & ~0x7); 
 
-    void *arg_ptr = NULL;
+    void *arg_ptr = (void *)arg;
     if (arg && arg_size > 0) {
         unsigned total = (arg_size + 7u) & ~7u;  
         sp8 -= total;                            
