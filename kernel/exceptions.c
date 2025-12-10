@@ -69,29 +69,31 @@ void dabt_handler_c(struct exc_frame *frame) {
     }
     
 }
-
 void irq_handler_c(struct exc_frame *frame) {
     uint32_t pending1 = irqctrl_pending1();
     uint32_t pending2 = irqctrl_pending2();
+    bool timer_fired = false;
+    
     if (irq_debug) {
         print_exception_infos(EXC_IRQ, frame);
     }
     
+    // Handle timer interrupt (clear it, but don't schedule yet)
     if (pending1 & IRQCTRL_TIMER_C1_BIT) {
         uart_putc('!');
         clear_timer_interrupt();
         set_next_timer_interrupt();
-        scheduler_on_timer(frame);
+        timer_fired = true;  // Remember we need to schedule
     }
     
+    // Handle UART interrupt completely
     if (pending2 & IRQCTRL_PL011_BIT) {
         if (uart_irq_rx_pending()) {
             uart_irq_service_rx();
             
             while (!is_ring_empty()) {
                 char c = uart_getc();
-                switch (c)
-                {
+                switch (c) {
                 case 'S':
                     do_svc();
                     break;
@@ -106,14 +108,17 @@ void irq_handler_c(struct exc_frame *frame) {
                     break;
                 default:
                     scheduler_thread_create(main, &c, sizeof(c));
-                    /*
                     if (scheduler_curr()->is_idle) {
-                        scheduler_on_timer(frame);
+                        timer_fired = true;
                     }
-                    */
                     break;
                 }
             }
         } 
+    }
+    
+    // NOW schedule, after all interrupt sources are serviced
+    if (timer_fired) {
+        scheduler_on_timer(frame);
     }
 }
