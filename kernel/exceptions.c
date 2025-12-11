@@ -12,7 +12,6 @@
 #include <user/main.h>
 #include <kernel/exc_triggers.h>
 
-bool irq_debug = false;
 
 void und_handler_c(struct exc_frame *frame) {
 
@@ -71,10 +70,7 @@ void dabt_handler_c(struct exc_frame *frame) {
 
 void irq_handler_c(struct exc_frame *frame) {
     uint32_t pending1 = irqctrl_pending1();
-    if (irq_debug) {
-        print_exception_infos(EXC_IRQ, frame);
-    }
-    
+        
     if (pending1 & IRQCTRL_TIMER_C1_BIT) {
         uart_putc('!');
         clear_timer_interrupt();
