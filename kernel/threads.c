@@ -1,10 +1,29 @@
+/**
+ * @file threads.c
+ * @brief Thread allocation/free on a static thread table.
+ *
+ * Implementation details:
+ *  - Uses a single linked free-list of @ref thread_t objects.
+ *  - Provides a statically allocated stack for each thread.
+ *
+ * @ingroup threads_api
+ */
 #include <string.h>
 #include <stddef.h>
 #include <kernel/threads.h>
 
+/**
+ * @brief Static stack pool.
+ *
+ * Aligned to 8 bytes so that newly initialized stacks can be AAPCS-friendly.
+ * Each thread i gets @ref thread_stacks[i].
+ */
 __attribute__((aligned(8))) unsigned char thread_stacks[THREADS_MAX_COUNT][THREADS_STACK_SIZE];
 
+/** Static thread table (one TCB per possible thread). */
 static thread_t thread_table[THREADS_MAX_COUNT];
+
+/** Free-list head for available threads. */
 static thread_t *free_list = NULL;
 
 void threads_init(void) {
@@ -27,6 +46,7 @@ void threads_init(void) {
         memset(&thread->ctx, 0, sizeof(thread->ctx));
         thread->ctx.sp = (uint32_t)(thread->stack + thread->stack_size);
 
+        /* Push onto free-list */
         thread->next_free = free_list;
         free_list = thread;
     }
