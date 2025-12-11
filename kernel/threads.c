@@ -39,7 +39,8 @@ void threads_init(void) {
         thread->runq_node.prev = NULL;
 
         thread->is_idle = false;
-        
+        thread->in_runq = false;
+
         thread->stack = thread_stacks[i];
         thread->stack_size = THREADS_STACK_SIZE;
 
@@ -60,6 +61,7 @@ thread_t *thread_alloc(void) {
     free_list = thread->next_free;
     thread->next_free = NULL;
 
+    thread->in_runq = false;
     thread->state = THREAD_READY;
     
     return thread;
@@ -70,7 +72,7 @@ void thread_free(thread_t *thread) {
         return;
     }
     thread->state = (thread_state_t) THREAD_ZOMBIE;
-    
+    thread->in_runq = false;
     memset(&thread->ctx, 0, sizeof(thread->ctx));
     thread->ctx.sp = (uint32_t) (thread->stack + thread->stack_size);
 
