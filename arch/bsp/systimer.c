@@ -3,9 +3,6 @@
 #include <config.h>
 #include <arch/bsp/bcm2835_systimer_regs.h>
 
-
-
-
 void clear_timer_interrupt(void) {
     SYSTIMER->CS = SYSTIMER_M1;
 }

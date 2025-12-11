@@ -8,9 +8,6 @@
  * %s with NULL prints "(null)".
  * Returns total characters emitted, or -1 on internal formatting error.
  *
- * @defgroup kprintf_api kprintf core API (public)
- * @brief kvprintf with kputc_fn sink.
- * @{
  */
 
 #ifndef KVPRINTF_H
@@ -31,4 +28,3 @@ typedef void (*kputc_fn)(char c, void *ctx);
 int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap);
 
 #endif /* KVPRINTF_H */
-/** @} */ /* end of kprintf_api */

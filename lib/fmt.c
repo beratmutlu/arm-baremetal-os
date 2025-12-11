@@ -1,11 +1,6 @@
 /**
  * @file fmt.c
  * @brief Integer-to-string formatting helpers (implementation).
- *
- * Implements the public API declared in @ref fmt.h using
- * allocation-free, buffer-based routines suitable for kernel use.
- *
- * @ingroup fmt_api
  */
 
 
@@ -16,13 +11,9 @@
 
 /** 
  * @brief Buffer size for digit conversion in any supported base.
- * 
- * Decimal representation of 32-bit values needs only ~11 characters.
- * But 32 bytes provides comfortable margin for all 32-bit format operations.
  */
 #define MAX_UINT32_DIGITS 32
 
-/** @cond INTERNAL */
 
 /**
  * @brief In-place reverse of a substring.
@@ -185,11 +176,6 @@ static int format_field(uint32_t mag, /*out*/ char* buf, size_t cap, char sign_c
 
 }
 
-/** @endcond */
-
-/* Public API implementations */
-
-/** @copydoc fmt_i32_dec */
 int fmt_i32_dec(int32_t num, /*out*/ char *buf, size_t cap, struct fmt_spec spec) {
     if (!buf || cap < 2) {
         return -1;
@@ -213,7 +199,6 @@ int fmt_i32_dec(int32_t num, /*out*/ char *buf, size_t cap, struct fmt_spec spec
     return format_field(mag, buf, cap, sign_ch, spec);
 }
 
-/** @copydoc fmt_u32 */
 int fmt_u32(uint32_t num, /*out*/ char* buf, size_t cap, struct fmt_spec spec) {
     if (!buf || cap == 0) {
         return -1;

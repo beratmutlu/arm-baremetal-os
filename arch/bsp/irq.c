@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdbool.h>
 #include <arch/bsp/bcm2835_irq.h>
 
 

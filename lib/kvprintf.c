@@ -2,10 +2,6 @@
 /**
  * @file kvprintf.c
  * @brief Implementation of kvprintf using fmt helpers.
- *
- * Parses minimal flags/width then uses @ref fmt_api for number formatting.
- *
- * @ingroup kprintf_api
  */
 
 #include <lib/kvprintf.h>
@@ -16,17 +12,12 @@
 
 /** 
  * @brief Only width specifier accepted by the parser.
- * 
- * Currently, only "%08x" style formatting with width=8 is supported.
- * Other widths will trigger an "Unknown conversion specifier" error.
  */
 #define ACCEPTED_WIDTH 8u
 
 /** 
  * @brief Buffer size for temporary formatting operations.
  * 
- * Must accommodate: 8 hex digits + "0x" prefix + sign + padding + \\0.
- * 32 bytes provides comfortable margin for all 32-bit format operations.
  */
 #define FMT_TMP_BUFSZ  32u
 
@@ -35,9 +26,6 @@ static const char *const K_UNKNOWN = "Unknown conversion specifier";
 
 /**
  * @brief Parse state for format string processing.
- * 
- * Tracks flags, width, and conversion specifier while scanning
- * a single format placeholder (from '%' to conversion character).
  */
 struct parse_state
 {
@@ -50,7 +38,6 @@ struct parse_state
     struct fmt_spec spec;   /**< Resolved formatting specification. */
 };
 
-/** @cond INTERNAL */
 
 /**
  * @brief Emit a single character through the output callback.
@@ -93,10 +80,6 @@ static inline void emit_unknown(kputc_fn out, void *ctx, int *count) {
 
 /**
  * @brief Parse format specifier flags and width from format string.
- * 
- * Advances the format string pointer past the parsed elements.
- * Extracts zero-padding flag, width value, and conversion character.
- * Populates the parse_state structure with results.
  * 
  * @param[in,out] pfmt   Pointer to format string pointer (updated to point after conversion char)
  * @param[out]    parsed Populated with parsing results
@@ -148,10 +131,6 @@ static inline void parse_format(const char **pfmt, struct parse_state *parsed) {
 /**
  * @brief Check if parsed format has invalid width combination.
  * 
- * Returns true if:
- * - Width was specified but is not 8 (unsupported)
- * - Modifiers were seen but no width was specified (e.g., "%0x" without digits)
- * 
  * @param parsed Parse state to check
  * @return true if width combination is invalid, false otherwise
  */
@@ -161,10 +140,7 @@ static inline bool is_invalid_width_combo(const struct parse_state parsed) {
 
 /**
  * @brief Format and emit a 32-bit integer value.
- * 
- * Delegates to either fmt_u32 or fmt_i32_dec based on signedness,
- * then emits the resulting string through the output callback.
- * 
+ *
  * @param out         Output callback function
  * @param ctx         User context for callback
  * @param count       Pointer to character counter (incremented)
@@ -192,9 +168,6 @@ static inline int format_and_emit_32(kputc_fn out, void *ctx, int *count, uint32
     return 0;
 }
 
-/** @endcond */
-
-/** @copydoc kvprintf */
 int kvprintf(kputc_fn out, void *ctx, const char *fmt, va_list ap){
     int count = 0;
 

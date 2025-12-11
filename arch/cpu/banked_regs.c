@@ -1,8 +1,3 @@
-/**
- * @file banked_regs.c
- * @brief Implementation of banked register accessors.
- */
-
 #include <arch/cpu/banked_regs.h>
 #include <arch/cpu/cpu.h>
 #include <kernel/panic.h>

@@ -5,12 +5,6 @@
  * Minimal, allocation-free formatting for kernel use.
  */
 
-
-/** @defgroup fmt_api Formatting API
- *  @brief Conversion helpers (e.g. fmt_i32_dec, fmt_u32).
- *  @{
- */
-
 #ifndef FMT_H
 #define FMT_H
 
@@ -102,4 +96,3 @@ int fmt_i32_dec(int32_t num, char *buf, size_t cap, const struct fmt_spec spec);
 int fmt_u32(uint32_t num, char *buf, size_t cap, const struct fmt_spec spec);
 
 #endif /* FMT_H */
-/** @} */ /* end of fmt_api */
