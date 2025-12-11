@@ -71,7 +71,6 @@ void dabt_handler_c(struct exc_frame *frame) {
 
 void irq_handler_c(struct exc_frame *frame) {
     uint32_t pending1 = irqctrl_pending1();
-    uint32_t pending2 = irqctrl_pending2();
     if (irq_debug) {
         print_exception_infos(EXC_IRQ, frame);
     }
