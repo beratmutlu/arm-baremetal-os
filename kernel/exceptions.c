@@ -83,8 +83,6 @@ void irq_handler_c(struct exc_frame *frame) {
         scheduler_on_timer(frame);
     }
     
-    if (pending2 & IRQCTRL_PL011_BIT) {
-        if (uart_irq_rx_pending()) {
             uart_irq_service_rx();
             
             while (!is_ring_empty()) {
@@ -109,8 +107,6 @@ void irq_handler_c(struct exc_frame *frame) {
                         scheduler_on_timer(frame);
                     }
                     break;
-                }
-            }
-        } 
+        }
     }
-}
+} 
