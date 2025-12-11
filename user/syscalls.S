@@ -1,3 +1,7 @@
+.syntax unified
+.arch armv7-a
+.arm
+
 #include <user/syscalls.h>
 .global syscall_exit
 
