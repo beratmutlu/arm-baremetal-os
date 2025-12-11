@@ -9,7 +9,6 @@
 #include <kernel/panic.h>
 #include <kernel/scheduler.h>
 #include <arch/cpu/cpu.h>
-#include <kernel/syscall.h>
 #include <user/main.h>
 #include <kernel/exc_triggers.h>
 
@@ -33,7 +32,7 @@ void svc_handler_c(struct exc_frame *frame) {
         panic("Supervisor Call in kernel mode");
     }
 
-    uint32_t nr = decode_svc_imm(frame->lr);
+    uint32_t nr = (uint32_t) frame->r[7];
 
     switch (nr)
     {
