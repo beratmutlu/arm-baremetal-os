@@ -35,10 +35,13 @@ void svc_handler_c(struct exc_frame *frame) {
 
     switch (nr)
     {
-    case 0:
+    case 1:
         scheduler_on_thread_exit(frame);
         break;
     
+    case 2:
+        // CREATE THREAD
+        break;
     default:
         scheduler_on_thread_exit(frame);
         break;

@@ -11,6 +11,8 @@
 
 /** Syscall ID: exit current thread. */
 #define SYSCALL_ID_EXIT          1
+#define SYSCALL_ID_EXIT          2
+
 #ifndef __ASSEMBLER__
 
 /**
