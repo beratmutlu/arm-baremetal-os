@@ -1,4 +1,4 @@
-/* scheduler.c */
+
 /**
  * @file scheduler.c
  * @brief Round-robin scheduler and context switch glue.
