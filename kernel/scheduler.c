@@ -287,9 +287,8 @@ void scheduler_blocked_on_sleep(struct exc_frame *frame, unsigned cycles) {
     thread_t *blocked_sleep = current_thread;
     blocked_sleep->state = THREAD_BLOCKED_SLEEP;
     blocked_sleep->in_runq = false;
-    list_remove(ready_queue, &blocked_sleep->runq_node);
     list_add_last(sleep_queue, &blocked_sleep->runq_node);
-    blocked_sleep->sleep_cycles_left = cycles;
+    blocked_sleep->sleep_cycles_left = cycles + 1;
     save_context_from_frame(frame, blocked_sleep);
 
     thread_t *next = scheduler_pick_next();
@@ -315,6 +314,7 @@ void scheduler_update_sleep_q(void) {
         }
         if (t->sleep_cycles_left == 0) {
             list_remove(head, curr);
+            t->in_runq = false;
             scheduler_enqueue_ready(t);
         }
         curr = next;

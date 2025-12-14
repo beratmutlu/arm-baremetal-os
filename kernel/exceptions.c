@@ -71,7 +71,11 @@ void svc_handler_c(struct exc_frame *frame) {
 
     case SYSCALL_ID_SLEEP: {
         unsigned cycles = frame->r[0];
+        if (cycles == 0) {
+            return;
+        }
         scheduler_blocked_on_sleep(frame, cycles);
+
         break;
     }
 
