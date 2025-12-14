@@ -74,7 +74,7 @@ SRC = arch/cpu/entry.S kernel/threads.c kernel/scheduler.c arch/cpu/stacks.c ker
 
 
 # Hier separate user source files hinzufügen
-USRC = user/03_main_thread.c user/syscalls.S
+USRC = user/04_main_thread.c user/syscalls.S
 
 # Hier können eigene GCC flags mit angegeben werden.
 # Die vorgegebenen Flags können weiter unten gefunden werden unter
@@ -99,7 +99,7 @@ endif
 LDFLAGS =
 
 # Hier den git branch angeben, der für die Abgabe benutzt werden soll
-SUBMISSION_BRANCH = a3_from_a2
+SUBMISSION_BRANCH = a4_from_a3_from_a2_2
 
 # Wenn ihr zuhause auf der Hardware arbeitet, hier das TFTP-Verzeichnis eintragen
 TFTP_PATH = /srv/tftp

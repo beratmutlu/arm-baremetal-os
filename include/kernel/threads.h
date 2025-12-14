@@ -23,7 +23,9 @@
 typedef enum thread_state {
     THREAD_READY = 0,   /**< Runnable and may be scheduled */
     THREAD_RUNNING,     /**< Currently executing on CPU */
-    THREAD_ZOMBIE       /**< Finished / free-list eligible */
+    THREAD_ZOMBIE,      /**< Finished / free-list eligible */
+    THREAD_BLOCKED_IO,
+    THREAD_BLOCKED_SLEEP
 } thread_state_t;
 
 /**
@@ -52,6 +54,7 @@ struct thread {
     thread_t *next_free;    /**< Free-list linkage */
     bool is_idle;           /**< True iff this is the idle thread */
     bool in_runq;           /**< True iff currently enqueued in ready queue */
+    int sleep_cycles_left;
 };
 
 /**

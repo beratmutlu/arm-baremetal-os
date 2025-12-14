@@ -11,6 +11,7 @@
 #include <kernel/exc_triggers.h>
 #include <kernel/threads.h>
 #include <kernel/scheduler.h>
+#include <user/main.h>
 
 extern bool irq_debug;
 extern void register_checker(void);
@@ -30,6 +31,7 @@ void start_kernel[[noreturn]](void) {
 
     kprintf("=== Betriebssystem gestartet ===\n");
     test_kernel();
+    scheduler_thread_create(main, NULL, 0);
     scheduler_start();
 
     __builtin_unreachable();

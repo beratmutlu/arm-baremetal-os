@@ -11,7 +11,7 @@
 #include <arch/cpu/cpu.h>
 #include <user/main.h>
 #include <kernel/exc_triggers.h>
-
+#include <user/syscalls.h>
 
 void und_handler_c(struct exc_frame *frame) {
 
@@ -30,19 +30,59 @@ void svc_handler_c(struct exc_frame *frame) {
         print_exception_infos(EXC_SVC, frame);
         panic("Supervisor Call in kernel mode");
     }
-
+    frame->lr += 4;
     uint32_t nr = (uint32_t) frame->r[7];
 
     switch (nr)
     {
-    case 1:
+    case SYSCALL_ID_EXIT: {
         scheduler_on_thread_exit(frame);
         break;
-    
-    case 2:
-        // CREATE THREAD
+    }
+
+    case SYSCALL_ID_CREATE: {
+        void (*f)(void *) = (void (*)(void *))(uintptr_t)frame->r[0];
+        void *args        = (void *)(uintptr_t)frame->r[1];
+        unsigned arg_size = (unsigned)frame->r[2];
+
+        if (!f) {
+            scheduler_on_thread_exit(frame);
+            break;
+        }
+        scheduler_thread_create(f, args, arg_size);
         break;
+    }
+
+    case SYSCALL_ID_GETC: {
+        if (!is_ring_empty()) {
+            char c = uart_getc();
+            frame->r[0] = (uint32_t) c;
+        } else { 
+            scheduler_blocked_on_io(frame);
+        }
+        break;
+    }
+
+    case SYSCALL_ID_PUTC: {
+        char c = (char) frame->r[0];
+        uart_putc(c);
+        break;
+    }
+
+    case SYSCALL_ID_SLEEP: {
+        unsigned cycles = frame->r[0];
+        scheduler_blocked_on_sleep(frame, cycles);
+        break;
+    }
+
+    case SYSCALL_ID_UND: {
+        print_exception_infos(EXC_SVC, frame);
+        scheduler_on_thread_exit(frame);
+        break;
+    }
+
     default:
+        print_exception_infos(EXC_SVC, frame);
         scheduler_on_thread_exit(frame);
         break;
     }
@@ -73,38 +113,19 @@ void dabt_handler_c(struct exc_frame *frame) {
 
 void irq_handler_c(struct exc_frame *frame) {
     uint32_t pending1 = irqctrl_pending1();
-        
+    
+    uart_irq_service_rx();
+    while (!is_io_queue_empty() && !is_ring_empty()) {
+        scheduler_wake_blocked_on_io(uart_getc());
+    }
+
     if (pending1 & IRQCTRL_TIMER_C1_BIT) {
-        uart_putc('!');
         clear_timer_interrupt();
         set_next_timer_interrupt();
+        scheduler_update_sleep_q();
         scheduler_on_timer(frame);
     }
     
-            uart_irq_service_rx();
-            
-            while (!is_ring_empty()) {
-                char c = uart_getc();
-                switch (c)
-                {
-                case 'S':
-                    do_svc();
-                    break;
-                case 'P':
-                    do_prefetch_abort();
-                    break;
-                case 'A':
-                    do_data_abort();
-                    break;
-                case 'U':
-                    do_undefined_inst();
-                    break;
-                default:
-                    scheduler_thread_create(main, &c, sizeof(c));
-                    if (scheduler_curr()->is_idle) {
-                        scheduler_on_timer(frame);
-                    }
-                    break;
-        }
-    }
-} 
+   
+}
+ 

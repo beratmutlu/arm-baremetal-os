@@ -43,6 +43,9 @@ static thread_t *current_thread = NULL;
  */
 list_create(ready_queue);
 
+list_create(sleep_queue);
+
+list_create(io_queue);
 
 /**
  * @brief Idle thread body.
@@ -224,7 +227,6 @@ void scheduler_on_timer(struct exc_frame *frame) {
     restore_frame_from_context(current_thread, frame);
 
     if (prev != next) {
-        uart_putc('\n');
     }
 }
 void scheduler_on_thread_exit(struct exc_frame *frame) {
@@ -243,6 +245,78 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
         thread_free(zombie);
     }
 
-    uart_putc('\n');
     restore_frame_from_context(current_thread, frame);
+}
+
+void scheduler_blocked_on_io(struct exc_frame *frame) {
+    thread_t *blocked_io = current_thread;
+    blocked_io->state = THREAD_BLOCKED_IO;
+    blocked_io->in_runq = false;
+    list_add_last(io_queue, &blocked_io->runq_node);
+    
+    save_context_from_frame(frame, blocked_io);
+
+    thread_t *next = scheduler_pick_next();
+    if (!next) {
+        next = idle_thread;
+    }
+
+    current_thread = next;
+    current_thread->state = THREAD_RUNNING;
+
+    restore_frame_from_context(current_thread, frame);
+}
+
+void scheduler_wake_blocked_on_io(char c) {
+    list_node *to_wake_node = list_remove_first(io_queue);
+    if (!to_wake_node) {
+        return;
+    }
+    thread_t *to_wake = node_to_thread(to_wake_node);
+    to_wake->ctx.r[0] = (uint32_t) (unsigned char) c;
+    to_wake->in_runq = false;
+    scheduler_enqueue_ready(to_wake);
+    
+}
+
+bool is_io_queue_empty() {
+    return list_is_empty(io_queue);
+}
+
+void scheduler_blocked_on_sleep(struct exc_frame *frame, unsigned cycles) {
+    thread_t *blocked_sleep = current_thread;
+    blocked_sleep->state = THREAD_BLOCKED_SLEEP;
+    blocked_sleep->in_runq = false;
+    list_remove(ready_queue, &blocked_sleep->runq_node);
+    list_add_last(sleep_queue, &blocked_sleep->runq_node);
+    blocked_sleep->sleep_cycles_left = cycles;
+    save_context_from_frame(frame, blocked_sleep);
+
+    thread_t *next = scheduler_pick_next();
+    if (!next) {
+        next = idle_thread;
+    }
+
+    current_thread = next;
+    current_thread->state = THREAD_RUNNING;
+
+    restore_frame_from_context(current_thread, frame);
+
+}
+
+void scheduler_update_sleep_q(void) {
+    list_node *head = sleep_queue;           
+    for (list_node *curr = head->next; curr != head; ) {
+        list_node *next = curr->next;
+        thread_t *t = node_to_thread(curr);
+
+        if (t->sleep_cycles_left > 0) {
+            t->sleep_cycles_left--;
+        }
+        if (t->sleep_cycles_left == 0) {
+            list_remove(head, curr);
+            scheduler_enqueue_ready(t);
+        }
+        curr = next;
+    }
 }

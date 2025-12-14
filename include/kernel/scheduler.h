@@ -59,4 +59,11 @@ void scheduler_on_thread_exit(struct exc_frame *frame);
  */
 thread_t *scheduler_curr(void);
 
+void scheduler_blocked_on_io(struct exc_frame *frame);
+
+void scheduler_wake_blocked_on_io(char c);
+
+bool is_io_queue_empty();
+void scheduler_update_sleep_q(void);
+void scheduler_blocked_on_sleep(struct exc_frame *frame, unsigned cycles);
 #endif /* SCHEDULER_H */
