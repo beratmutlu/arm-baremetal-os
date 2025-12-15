@@ -25,6 +25,10 @@ bool is_ring_empty() {
     return buff_is_empty(ring);
 }
 
+char ring_peek(void) {
+    return buff_peekc(ring);
+}
+
 void uart_irq_service_rx(void){
     while (!pl011_rx_empty()) {
         char c = (char)(uint8_t)PL011->DR;

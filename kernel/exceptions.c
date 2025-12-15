@@ -119,6 +119,13 @@ void irq_handler_c(struct exc_frame *frame) {
     uint32_t pending1 = irqctrl_pending1();
     
     uart_irq_service_rx();
+    if (!is_ring_empty()){
+        char c = ring_peek();
+        if (c == 'S') {
+            asm volatile("mov r7, #1\n svc #0\n");
+            uart_getc();
+        }
+    } 
     while (!is_io_queue_empty() && !is_ring_empty()) {
         scheduler_wake_blocked_on_io(uart_getc());
     }

@@ -12,11 +12,12 @@
 #include <arch/cpu/cpu.h>
 #include <stdint.h>
 #include <kernel/kprintf.h>
-#include <user/syscalls.h>
 #include <arch/bsp/uart.h>
 
 extern void syscall_exit(void);
 extern void scheduler_start_asm(struct exc_frame *frame);
+
+void syscall_exit [[gnu::weak]] (void);
 
 /**
  * @brief Classic container_of helper to map a run queue node to its thread.

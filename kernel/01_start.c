@@ -11,11 +11,11 @@
 #include <kernel/exc_triggers.h>
 #include <kernel/threads.h>
 #include <kernel/scheduler.h>
-#include <user/main.h>
 
 extern bool irq_debug;
 extern void register_checker(void);
 
+void main [[gnu::weak]] (void *args);
 
 void start_kernel[[noreturn]](void);
 void start_kernel[[noreturn]](void) {
