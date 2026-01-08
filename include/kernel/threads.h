@@ -45,16 +45,16 @@ typedef struct thread thread_t;
  * @brief Thread control block.
  */
 struct thread {
-    uint32_t tid;           /**< Thread ID (index into static table) */
-    thread_state_t state;   /**< Lifecycle state */
-    list_node runq_node;    /**< Ready queue linkage */
-    cpu_ctx_t ctx;          /**< Saved CPU context */
-    uint8_t *stack;         /**< Base of stack memory */
-    uint32_t stack_size;    /**< Stack size in bytes */
-    thread_t *next_free;    /**< Free-list linkage */
-    bool is_idle;           /**< True iff this is the idle thread */
-    bool in_runq;           /**< True iff currently enqueued in ready queue */
-    int sleep_cycles_left;
+    uint32_t tid;                               /**< Thread ID (index into static table) */
+    thread_state_t state;                       /**< Lifecycle state */
+    list_node runq_node;                        /**< Ready queue linkage */
+    cpu_ctx_t ctx;                              /**< Saved CPU context */
+    [[gnu::aligned(8)]] uint8_t *stack;         /**< Base of stack memory */
+    uint32_t stack_size;                        /**< Stack size in bytes */
+    thread_t *next_free;                        /**< Free-list linkage */
+    bool is_idle;                               /**< True iff this is the idle thread */
+    bool in_runq;                               /**< True iff currently enqueued in ready queue */
+    int sleep_cycles_left;                      /**< Number of cycles left in sleep queue */
 };
 
 /**

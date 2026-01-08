@@ -14,18 +14,17 @@
 #include <kernel/kprintf.h>
 #include <arch/bsp/uart.h>
 
-extern void syscall_exit(void);
 extern void scheduler_start_asm(struct exc_frame *frame);
 
 void syscall_exit [[gnu::weak]] (void);
 
 /**
- * @brief Classic container_of helper to map a run queue node to its thread.
+ * Classic container_of helper to map a run queue node to its thread.
  */
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 
 /**
- * @brief Convert a list node from the ready queue back to its owning thread.
+ * Convert a list node from the ready queue back to its owning thread.
  */
 static thread_t *node_to_thread(list_node *node) {
     return container_of(node, thread_t, runq_node);
@@ -39,7 +38,7 @@ static thread_t *idle_thread = NULL;
 static thread_t *current_thread = NULL;
 
 /**
- * @brief Scheduler ready queue (FIFO).
+ * Scheduler ready queue (FIFO).
  * The idle thread is not enqueued; it is selected only when the queue is empty.
  */
 list_create(ready_queue);
@@ -49,20 +48,18 @@ list_create(sleep_queue);
 list_create(io_queue);
 
 /**
- * @brief Idle thread body.
+ * Idle thread body.
  */
-static void idle_func(void *arg) {
-    arg = NULL;
-    while (!arg) {
+static void idle_func [[noreturn]] (void *arg) {
+    (void)arg;
+    while (true) {
         asm volatile ("wfi");
     }
+    __builtin_unreachable();
 }
 
 /**
- * @brief Save user execution context from an exception frame into a thread.
- *
- * @param frame  Live exception frame captured at exception entry.
- * @param thread Target thread whose context is updated.
+ * Save user execution context from an exception frame into a thread.
  */
 static inline void save_context_from_frame(const struct exc_frame *frame,
                                            thread_t *thread)
@@ -85,10 +82,7 @@ static inline void save_context_from_frame(const struct exc_frame *frame,
 }
 
 /**
- * @brief Restore thread context into an exception frame (in-place).
- *
- * @param thread Source thread context.
- * @param frame  Destination exception frame to be modified.
+ * Restore thread context into an exception frame (in-place).
  */
 static inline void restore_frame_from_context(const thread_t *thread,
                                               struct exc_frame *frame)
@@ -110,9 +104,7 @@ static inline void restore_frame_from_context(const thread_t *thread,
 }
 
 /**
- * @brief Enqueue a thread as runnable.
- *
- * @param thread Thread to enqueue.
+ * Enqueue a thread as runnable.
  */
 static inline void scheduler_enqueue_ready(thread_t *thread) {
     if (!thread || thread->is_idle || thread->in_runq) {
@@ -124,9 +116,8 @@ static inline void scheduler_enqueue_ready(thread_t *thread) {
 }
 
 /**
- * @brief Dequeue the next runnable thread from the ready queue.
- *
- * @return Next runnable thread, or NULL if queue is empty.
+ * Dequeue the next runnable thread from the ready queue.
+ * Returns NULL if queue is empty.
  */
 static inline thread_t *scheduler_pick_next(void) {
     list_node *next = list_remove_first(ready_queue);

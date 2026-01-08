@@ -59,11 +59,33 @@ void scheduler_on_thread_exit(struct exc_frame *frame);
  */
 thread_t *scheduler_curr(void);
 
+/**
+ * @brief Block the current thread on I/O and switch to the next runnable thread.
+ */
 void scheduler_blocked_on_io(struct exc_frame *frame);
 
+/**
+ * @brief Wake one thread blocked on I/O.
+ *
+ * @param c Character to deliver to the woken thread.
+ */
 void scheduler_wake_blocked_on_io(char c);
 
-bool is_io_queue_empty();
+/**
+ * @brief Check whether the I/O wait queue is empty.
+ */
+bool is_io_queue_empty(void);
+
+/**
+ * @brief Update the sleep queue and wake expired sleepers.
+ */
 void scheduler_update_sleep_q(void);
+
+/**
+ * @brief Block current thread on sleep for a number of cycles.
+ *
+ * @param frame  Pointer to the live exception frame being used for return.
+ * @param cycles Number of cycles to sleep.
+ */
 void scheduler_blocked_on_sleep(struct exc_frame *frame, unsigned cycles);
 #endif /* SCHEDULER_H */

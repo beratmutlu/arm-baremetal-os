@@ -25,8 +25,14 @@
 void uart_init(void);
 
 
-bool is_ring_empty();
+/**
+ * @brief Return whether the ring buffer is empty.
+ */
+bool is_ring_empty(void);
 
+/**
+ * @brief Return the next character in the ring buffer without removing it.
+ */
 char ring_peek(void);
 
 

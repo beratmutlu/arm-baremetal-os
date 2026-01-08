@@ -31,7 +31,7 @@ void svc_handler_c(struct exc_frame *frame) {
         panic("Supervisor Call in kernel mode");
     }
     frame->lr += 4;
-    uint32_t nr = (uint32_t) frame->r[7];
+    uint32_t nr = (uint32_t) frame->r[SYSCALL_ID_REG];
 
     switch (nr)
     {
