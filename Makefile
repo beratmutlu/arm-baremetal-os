@@ -67,14 +67,14 @@
 #                            und reverse-continue "rückwärts" zu debuggen.
 
 # Binäre Lsg (falls verwendet, ansonsten leer lassen)
-BIN_LSG = 
+BIN_LSG = mmu
 
 # Hier eure source files hinzufügen
-SRC = arch/cpu/entry.S kernel/threads.c kernel/scheduler.c arch/cpu/stacks.c kernel/01_start.c kernel/kprintf.c kernel/panic.c arch/bsp/yellow_led.c lib/ubsan.c lib/mem.c arch/bsp/uart.c lib/fmt.c lib/kvprintf.c kernel/exceptions.c arch/bsp/irq.c arch/bsp/systimer.c kernel/exception_print.c arch/cpu/vectors.S arch/cpu/traps.S arch/cpu/init_stacks.S arch/cpu/cpu.c tests/regcheck_asm.S tests/regcheck.c arch/cpu/banked_regs.c	kernel/exc_frame_layout.c
+SRC = arch/cpu/mmu.c arch/cpu/entry.S kernel/threads.c kernel/scheduler.c arch/cpu/stacks.c kernel/01_start.c kernel/kprintf.c kernel/panic.c arch/bsp/yellow_led.c lib/ubsan.c lib/mem.c arch/bsp/uart.c lib/fmt.c lib/kvprintf.c kernel/exceptions.c arch/bsp/irq.c arch/bsp/systimer.c kernel/exception_print.c arch/cpu/vectors.S arch/cpu/traps.S arch/cpu/init_stacks.S arch/cpu/cpu.c tests/regcheck_asm.S tests/regcheck.c arch/cpu/banked_regs.c	kernel/exc_frame_layout.c
 
 
 # Hier separate user source files hinzufügen
-USRC = user/04_main_thread.c user/syscalls.S
+USRC = user/05_main_thread.c user/syscalls.S
 
 # Hier können eigene GCC flags mit angegeben werden.
 # Die vorgegebenen Flags können weiter unten gefunden werden unter
@@ -99,7 +99,7 @@ endif
 LDFLAGS =
 
 # Hier den git branch angeben, der für die Abgabe benutzt werden soll
-SUBMISSION_BRANCH = a4_from_a3_from_a2_2
+SUBMISSION_BRANCH = a5_from_a4_2
 
 # Wenn ihr zuhause auf der Hardware arbeitet, hier das TFTP-Verzeichnis eintragen
 TFTP_PATH = /srv/tftp

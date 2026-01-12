@@ -1,67 +1,61 @@
 #ifndef MMU_H
 #define MMU_H
 
-/** \brief L1 Tabellen Eintrag */
-typedef unsigned int l1_entry;
+#include <stdbool.h>
+#include <stdint.h>
 
-/**
- * \brief Zugriffsberechtigungen für Sektionen
- *
- *  |   |            |
- *  |:--|-----------:|
- *  |NA | No Access  |
- *  |R  | Read Only  |
- *  |RW | Read Write |
- *
- *  Zuerst ist die Berechtigung für den privilegierten Modus angegeben.
- *  Danach die Berechtigung für den unprivilegierten Modus.
- *
- *  Bsp: PERM_RW_R, priv kann lesen und schreiben, unpriv kann nur lesen.
- *
- */
+
+typedef uint32_t l1_entry;
+
+
 enum mmu_permission {
-	PERM_NO_ACCESS         = 0b000,
-	PERM_RW_NA             = 0b001,
-	PERM_R_NA              = 0b101,
-	PERM_R_R               = 0b111,
-	PERM_RW_R              = 0b010,
-	PERM_FULL_ACCESS       = 0b011
+    PERM_NO_ACCESS   = 0b000,
+    PERM_RW_NA       = 0b001,
+    PERM_RW_R        = 0b010,
+    PERM_FULL_ACCESS = 0b011,
+    PERM_R_NA        = 0b101,
+    PERM_R_R         = 0b111,
 };
 
-/**
- * \brief Erstellt einen L1 Tabellen Sektions Eintrag
- *
- * \param phy_addr Die Physikalische Adresse auf die zugegriffen werden soll
- * \param perm Die Zugriffsberechtigungen die gesetzt werden soll
- * \param xn Execute Never
- * \param pxn Privileged Execute Never
- * \return L1 Tabellen Sektions Eintrag
- */
-[[nodiscard]] l1_entry mmu_l1_section(void * phy_addr, enum mmu_permission perm, bool xn, bool pxn);
+#define MMU_SECTION_SHIFT        20u
+#define MMU_SECTION_SIZE         (1u << MMU_SECTION_SHIFT)   /* 1 MiB */
+#define MMU_SMALL_PAGE_SHIFT     12u
+#define MMU_SMALL_PAGE_SIZE      (1u << MMU_SMALL_PAGE_SHIFT) /* 4 KiB */
+
+#define MMU_L1_ENTRIES           4096u
+#define MMU_L1_TABLE_ALIGNMENT   (16u * 1024u)
+
+/* Coarse L2: 256 entries = 1 MiB window via 4 KiB pages */
+#define MMU_L2_ENTRIES           256u
+#define MMU_L2_TABLE_ALIGNMENT   1024u
 
 
-/**
- * \brief Erstellt einen L1 Tabellen Fault Eintrag
- * \return L1 Tabellen Fault Eintrag
- */
+[[nodiscard]] l1_entry mmu_l1_section(void *phy_addr, enum mmu_permission perm, bool xn, bool pxn);
+
+
 [[nodiscard]] l1_entry mmu_l1_fault [[gnu::const]] (void);
 
-/**
- * \brief Setzt einen L1 Tabellen Eintrag
- * \param virt_addr Die virtuelle Adresse die gesetzt werden soll
- * \param entry Der L1 Tabellen Eintrag
- */
-void mmu_set_l1_entry(void * virt_addr, l1_entry entry);
 
-/**
- * \brief Initialisiert die MMU
- * Initialisiert die MMU ohne diese anzuschalten. Alle Einträge werden auf
- * Fault gesetzt.
- */
+void mmu_set_l1_entry(void *virt_addr, l1_entry entry);
+
+typedef uint32_t l2_entry;
+
+
+[[nodiscard]] l1_entry mmu_l1_page_table(void *l2_table);
+
+
+[[nodiscard]] l2_entry mmu_l2_small_page(void *phy_addr, enum mmu_permission perm, bool xn);
+
+
+[[nodiscard]] l2_entry mmu_l2_fault(void);
+
+
 void mmu_init(void);
 
-/**
- * \brief Schaltet die MMU an
- */
+
+void mmu_setup_protection(void);
+
+
 void mmu_enable(void);
-#endif
+
+#endif /* MMU_H */

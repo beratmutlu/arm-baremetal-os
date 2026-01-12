@@ -14,8 +14,22 @@
 /** Maximum number of threads (including idle). */
 #define THREADS_MAX_COUNT   32
 
-/** Stack size per thread in bytes. */
-#define THREADS_STACK_SIZE  2048
+/** Stack size per thread in bytes (mapped pages, not “used bytes”). */
+#define THREADS_STACK_SIZE          4096u
+
+/** One thread gets one 1 MiB L2 window. */
+#define THREADS_STACK_REGION_STRIDE 0x00100000u
+#define THREADS_STACK_PAGE_SIZE     0x00001000u
+
+/** Pick a VA base that doesn't collide with your linker regions (>= 0x01000000 is safe). */
+#define THREADS_STACK_REGION_BASE   0x01000000u
+
+/** Per-thread stack window base (1 MiB aligned). */
+#define THREADS_STACK_WIN_BASE(tid) (THREADS_STACK_REGION_BASE + ((uint32_t)(tid) * THREADS_STACK_REGION_STRIDE))
+
+/** We leave page 0 as lower guard; stack page is page 1. */
+#define THREADS_STACK_BASE(tid)     (THREADS_STACK_WIN_BASE(tid) + THREADS_STACK_PAGE_SIZE)
+
 
 /**
  * @brief High-level lifecycle state of a thread.

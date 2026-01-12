@@ -9,7 +9,9 @@
 /**
  * @brief Static stack pool.
  */
-__attribute__((aligned(8))) unsigned char thread_stacks[THREADS_MAX_COUNT][THREADS_STACK_SIZE];
+__attribute__((aligned(4096)))
+unsigned char thread_stacks_phys[THREADS_MAX_COUNT][THREADS_STACK_PAGE_SIZE];
+
 
 /** Static thread table (one TCB per possible thread). */
 static thread_t thread_table[THREADS_MAX_COUNT];
@@ -32,11 +34,12 @@ void threads_init(void) {
         thread->is_idle = false;
         thread->in_runq = false;
 
-        thread->stack = thread_stacks[i];
+        thread->stack = (uint8_t *)(uintptr_t)THREADS_STACK_BASE(i);
         thread->stack_size = THREADS_STACK_SIZE;
+        thread->ctx.sp = (uint32_t)(uintptr_t)(thread->stack + thread->stack_size);
+
 
         memset(&thread->ctx, 0, sizeof(thread->ctx));
-        thread->ctx.sp = (uint32_t)(thread->stack + thread->stack_size);
 
         thread->next_free = free_list;
         free_list = thread;
