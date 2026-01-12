@@ -11,6 +11,7 @@
 #include <kernel/exc_triggers.h>
 #include <kernel/threads.h>
 #include <kernel/scheduler.h>
+#include <arch/cpu/mmu.h>
 
 extern bool irq_debug;
 extern void register_checker(void);
@@ -28,6 +29,11 @@ void start_kernel[[noreturn]](void) {
     
     threads_init();
     scheduler_init();
+    mmu_init();
+    uart_puts(">>> before mmu_enable\n");
+
+    //mmu_enable();
+    uart_puts(">>> after mmu_enable\n");
 
     kprintf("=== Betriebssystem gestartet ===\n");
     test_kernel();
