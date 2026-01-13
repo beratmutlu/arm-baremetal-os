@@ -35,7 +35,7 @@ static inline void read_kernel_text(void) {
  * Triggers data abort if called from user mode with MMU protection enabled
  */
 static inline void read_kernel_stack(void) {
-    volatile char var = *((volatile char *)&und_stack);
+    volatile char var = *((volatile char *)0x004FF000u);
     (void)var;
 }
 
