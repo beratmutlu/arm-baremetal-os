@@ -6,6 +6,8 @@
 extern char ld_section_kernel_text;
 extern char ld_section_kernel_data_bss;
 
+/* External symbols for kernel stacks (adjust based on your implementation) */
+
 
 /* MMIO base address (BCM2835 peripherals) */
 #define MMIO_BASE 0x3F000000u
@@ -14,7 +16,6 @@ extern char ld_section_kernel_data_bss;
  * @brief Read from kernel data section
  * Triggers data abort if called from user mode with MMU protection enabled
  */
-[[gnu::no_sanitize("undefined")]]
 static inline void read_kernel_data(void) {
     volatile char var = *((volatile char *)&ld_section_kernel_data_bss);
     (void)var;
@@ -24,7 +25,6 @@ static inline void read_kernel_data(void) {
  * @brief Read from kernel text section
  * Triggers data abort if called from user mode with MMU protection enabled
  */
-[[gnu::no_sanitize("undefined")]]
 static inline void read_kernel_text(void) {
     volatile char var = *((volatile char *)&ld_section_kernel_text);
     (void)var;
@@ -34,7 +34,6 @@ static inline void read_kernel_text(void) {
  * @brief Read from kernel stack area
  * Triggers data abort if called from user mode with MMU protection enabled
  */
-[[gnu::no_sanitize("undefined")]]
 static inline void read_kernel_stack(void) {
     volatile char var = *((volatile char *)0x004FF000u);
     (void)var;
@@ -44,7 +43,6 @@ static inline void read_kernel_stack(void) {
  * @brief Read from MMIO (peripheral) region
  * Triggers data abort if called from user mode with MMU protection enabled
  */
-[[gnu::no_sanitize("undefined")]]
 static inline void read_mmio(void) {
     volatile uint32_t var = *((volatile uint32_t *)MMIO_BASE);
     (void)var;
@@ -54,33 +52,11 @@ static inline void read_mmio(void) {
  * @brief Read from an invalid/unmapped address
  * Triggers data abort due to translation fault
  */
-[[gnu::no_sanitize("undefined")]]
 static inline void read_invalid_addr(void) {
     volatile char var = *((volatile char *)0xFFFFFFFFu);
     (void)var;
 }
 
-[[gnu::no_sanitize("undefined")]]
-static inline char read_null_pointer(void) {
-    return *((volatile char *) NULL);
-}
-
-[[gnu::no_sanitize("undefined")]]
-static inline void jump_null_pointer(void) {
-    ((void (*)(void)) NULL)();
-}
-
-[[gnu::no_sanitize("undefined")]]
-static inline void write_user_text(void *func_ptr, char val) {
-    *((char *) func_ptr) = val;
-}
-
-static int user_data = 42;
-
-[[gnu::no_sanitize("undefined")]]
-static inline void jump_user_data(void) {
-    ((void (*)(void)) &user_data)();
-}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winfinite-recursion"
@@ -89,7 +65,8 @@ static void stackoverflow [[gnu::optimize("-O0")]] (void) {
 }
 #pragma GCC diagnostic pop
 
-[[gnu::no_sanitize("undefined")]]
+static int user_data = 42;
+
 void user_prog(void * arg) {
 	char c = *((char *) arg);
 	test_user(arg);
@@ -100,16 +77,16 @@ void user_prog(void * arg) {
 	#pragma GCC diagnostic push 
 	#pragma GCC diagnostic ignored "-Wpedantic"
      // cppcheck-suppress nullPointer
-	case 'n': var = read_null_pointer(); break; // read from NULL
-	case 'p': jump_null_pointer(); break; // jump to NULL
+	case 'n': var = *((volatile char *) NULL); break; // read from NULL
+	case 'p': ((void (*)(void)) NULL)(); break; // jump to NULL
 	case 'd': read_kernel_data(); break;
 	case 'k': read_kernel_text(); break;
 	case 'K': read_kernel_stack(); break;
 	case 'g': read_mmio(); break;
-	case 'c': write_user_text(user_prog, var); break; // write to user text
+	case 'c': *((char *) user_prog) = var; break; // write to user text
 	case 's': stackoverflow(); break;
 	case 'u': read_invalid_addr(); break;
-	case 'x': jump_user_data(); break; // jump to use data
+	case 'x': ((void (*)(void)) &user_data)(); break; // jump to use data
 	#pragma GCC diagnostic pop
 	}
 

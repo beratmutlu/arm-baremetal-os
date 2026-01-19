@@ -74,7 +74,7 @@ SRC = arch/cpu/mmu.c arch/cpu/entry.S kernel/threads.c kernel/scheduler.c arch/c
 
 
 # Hier separate user source files hinzufügen
-USRC = user/04_main_thread.c user/syscalls.S
+USRC = user/05_main_thread.c user/syscalls.S
 
 # Hier können eigene GCC flags mit angegeben werden.
 # Die vorgegebenen Flags können weiter unten gefunden werden unter

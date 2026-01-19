@@ -268,6 +268,13 @@ void mmu_setup_protection(void) {
     const uint32_t user_data_bss_start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
     const uint32_t user_data_bss_end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
 
+    map_identity_range(0x00000000, 
+                       0x00100000,  // Size = 1 MiB
+                       PERM_R_NA,   // Kernel Read-Only (User No Access)
+                       false,       // XN = false (Code execution allowed)
+                       false,       // PXN = false
+                       MMU_DOMAIN_KERNEL);
+                       
     /* Kernel text: Manager domain → kernel can execute, user gets fault on access */
     map_identity_range(kernel_text_start, kernel_text_end - kernel_text_start,
                     PERM_R_NA, false, false, MMU_DOMAIN_KERNEL);
