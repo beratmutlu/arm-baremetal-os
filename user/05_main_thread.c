@@ -6,9 +6,6 @@
 extern char ld_section_kernel_text;
 extern char ld_section_kernel_data_bss;
 
-/* External symbols for kernel stacks (adjust based on your implementation) */
-
-
 /* MMIO base address (BCM2835 peripherals) */
 #define MMIO_BASE 0x3F000000u
 
