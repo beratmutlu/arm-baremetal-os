@@ -24,6 +24,7 @@ extern char ld_section_user_rodata_end;
 extern char ld_section_user_data_bss;
 extern char ld_section_user_data_bss_end;
 
+extern char ld_section_init_end; 
 
 #define MMU_USABLE_RAM_SIZE_BYTES   (128u * 1024u * 1024u)
 
@@ -75,6 +76,8 @@ typedef struct l2_table_aligned {
 
 static l2_table_t l2_stack_tables[THREADS_MAX_COUNT];
 
+static l2_table_t l2_boot_region;
+
 static inline bool is_aligned_uint(uint32_t addr, uint32_t alignment_bytes) {
     return (addr & MMU_ALIGN_MASK(alignment_bytes)) == 0u;
 }
@@ -86,7 +89,7 @@ l2_entry mmu_l2_fault(void) {
 
 static inline uint32_t small_page_ap_bits(enum mmu_permission perm) {
     const uint32_t ap = (uint32_t)perm;
-    
+
     uint32_t bits = 0u;
     bits |= ((ap & 0x3u) << L2_SMALL_PAGE_AP01_SHIFT);
     if ((ap & 0x4u) != 0u) {
@@ -97,37 +100,37 @@ static inline uint32_t small_page_ap_bits(enum mmu_permission perm) {
 
 l2_entry mmu_l2_small_page(void *phy_addr, enum mmu_permission perm, bool xn) {
     const uint32_t pa = (uint32_t)(uintptr_t)phy_addr;
-    
+
     if (!is_aligned_uint(pa, MMU_SMALL_PAGE_SIZE)) {
         panic("MMU: phys addr not 4KiB aligned");
     }
-    
+
     uint32_t desc = 0u;
     desc |= (pa & L2_SMALL_PAGE_BASE_MASK);
     desc |= L2_DESC_TYPE_SMALL_PAGE;
     desc |= small_page_ap_bits(perm);
-    
+
     if (xn) {
         desc |= L2_SMALL_PAGE_XN_BIT;
     }
-    
+
     return desc;
 }
 
 l1_entry mmu_l1_page_table(void *l2_table) {
     const uint32_t addr = (uint32_t)(uintptr_t)l2_table;
-    
+
     if (!is_aligned_uint(addr, MMU_L2_TABLE_ALIGNMENT)) {
         panic("MMU: L2 table not 1KiB aligned");
     }
-    
+
     const uint32_t domain = MMU_DOMAIN_KERNEL;
-    
+
     uint32_t desc = 0u;
     desc |= (addr & L1_PAGE_TABLE_BASE_MASK);
     desc |= L1_DESC_TYPE_PAGE_TABLE;
     desc |= ((domain & 0xFu) << L1_PAGE_TABLE_DOMAIN_SHIFT);
-    
+
     return desc;
 }
 
@@ -279,7 +282,25 @@ void mmu_setup_protection(void) {
     const uint32_t user_data_bss_start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
     const uint32_t user_data_bss_end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
 
+    for (int i = 0; i < MMU_L2_ENTRIES; i++) {
+        l2_boot_region.e[i] = mmu_l2_fault();
+    }
+
+    uint32_t init_start = 0x00008000;
+    uint32_t init_end   = (uint32_t)(uintptr_t)&ld_section_init_end;
     
+    uint32_t init_end_aligned = (init_end + MMU_ALIGN_MASK(MMU_SMALL_PAGE_SIZE)) & ~MMU_ALIGN_MASK(MMU_SMALL_PAGE_SIZE);
+
+    for (uint32_t addr = init_start; addr < init_end_aligned; addr += MMU_SMALL_PAGE_SIZE) {
+        uint32_t idx = (addr >> MMU_SMALL_PAGE_SHIFT) & (MMU_L2_ENTRIES - 1);
+        l2_boot_region.e[idx] = mmu_l2_small_page((void *)(uintptr_t)addr,
+                                                  PERM_R_NA, // Kernel Read/Exec, User No
+                                                  false);    // XN = false (Executable)
+    }
+
+    mmu_set_l1_entry((void *)0, mmu_l1_page_table(l2_boot_region.e));
+
+
     /* Kernel text: R, executable, kernel-only */
     map_identity_range(kernel_text_start, kernel_text_end - kernel_text_start,
                     PERM_R_NA, false, false);
