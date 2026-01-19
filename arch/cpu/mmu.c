@@ -294,7 +294,7 @@ void mmu_setup_protection(void) {
     for (uint32_t addr = init_start; addr < init_end_aligned; addr += MMU_SMALL_PAGE_SIZE) {
         uint32_t idx = (addr >> MMU_SMALL_PAGE_SHIFT) & (MMU_L2_ENTRIES - 1);
         l2_boot_region.e[idx] = mmu_l2_small_page((void *)(uintptr_t)addr,
-                                                  PERM_R_NA, // Kernel Read/Exec, User No
+                                                  PERM_RW_NA, // Kernel Read/Exec, User No
                                                   false);    // XN = false (Executable)
     }
 
