@@ -30,8 +30,7 @@ enum mmu_permission {
 #define MMU_L2_TABLE_ALIGNMENT   1024u
 
 
-[[nodiscard]] l1_entry mmu_l1_section(void *phy_addr, enum mmu_permission perm, 
-                        bool xn, bool pxn, uint32_t domain);
+[[nodiscard]] l1_entry mmu_l1_section(void *phy_addr, enum mmu_permission perm, bool xn, bool pxn);
 
 
 [[nodiscard]] l1_entry mmu_l1_fault [[gnu::const]] (void);
@@ -42,7 +41,8 @@ void mmu_set_l1_entry(void *virt_addr, l1_entry entry);
 typedef uint32_t l2_entry;
 
 
-[[nodiscard]] l1_entry mmu_l1_page_table(void *l2_table, uint32_t domain);
+[[nodiscard]] l1_entry mmu_l1_page_table(void *l2_table);
+
 
 [[nodiscard]] l2_entry mmu_l2_small_page(void *phy_addr, enum mmu_permission perm, bool xn);
 

@@ -57,8 +57,6 @@ extern char ld_section_user_data_bss_end;
 
 /* Domain configuration (DACR) */
 #define MMU_DOMAIN_KERNEL           0u
-#define MMU_DOMAIN_USER_EXEC        1u  
-
 #define DACR_DOMAIN_MODE_NO_ACCESS  0x0u
 #define DACR_DOMAIN_MODE_CLIENT     0x1u
 #define DACR_DOMAIN_MODE_MANAGER    0x3u
@@ -116,12 +114,14 @@ l2_entry mmu_l2_small_page(void *phy_addr, enum mmu_permission perm, bool xn) {
     return desc;
 }
 
-l1_entry mmu_l1_page_table(void *l2_table, uint32_t domain) {
+l1_entry mmu_l1_page_table(void *l2_table) {
     const uint32_t addr = (uint32_t)(uintptr_t)l2_table;
     
     if (!is_aligned_uint(addr, MMU_L2_TABLE_ALIGNMENT)) {
         panic("MMU: L2 table not 1KiB aligned");
     }
+    
+    const uint32_t domain = MMU_DOMAIN_KERNEL;
     
     uint32_t desc = 0u;
     desc |= (addr & L1_PAGE_TABLE_BASE_MASK);
@@ -130,6 +130,7 @@ l1_entry mmu_l1_page_table(void *l2_table, uint32_t domain) {
     
     return desc;
 }
+
 l1_entry mmu_l1_fault(void) {
     return 0u;
 }
@@ -155,20 +156,29 @@ static inline uint32_t section_ap_bits(enum mmu_permission perm) {
     return bits;
 }
 
-l1_entry mmu_l1_section(void *phy_addr, enum mmu_permission perm, 
-                        bool xn, bool pxn, uint32_t domain) {
+l1_entry mmu_l1_section(void *phy_addr, enum mmu_permission perm, bool xn, bool pxn) {
     const uint32_t pa = (uint32_t)(uintptr_t)phy_addr;
+
     if (!is_aligned_uint(pa, MMU_SECTION_SIZE)) {
         panic("MMU: phys addr not 1MiB aligned");
     }
+
+    const uint32_t domain = MMU_DOMAIN_KERNEL;
 
     uint32_t desc = 0u;
     desc |= (pa & L1_SECTION_BASE_MASK);
     desc |= L1_DESC_TYPE_SECTION;
     desc |= ((domain & 0xFu) << L1_SECTION_DOMAIN_SHIFT);
     desc |= section_ap_bits(perm);
-    if (xn) desc |= L1_SECTION_XN_BIT;
-    if (pxn) desc |= L1_SECTION_PXN_BIT;  
+
+    if (xn) {
+        desc |= L1_SECTION_XN_BIT;
+    }
+
+    if (pxn) {
+        desc |= L1_SECTION_PXN_BIT;
+    }
+
     return desc;
 }
 
@@ -215,8 +225,7 @@ static void l1_fill_fault(void) {
 }
 
 static void map_identity_range(uint32_t start_addr, uint32_t size_bytes,
-                               enum mmu_permission perm, bool xn, bool pxn,
-                               uint32_t domain) 
+                               enum mmu_permission perm, bool xn, bool pxn)
 {
     const uint32_t first_mb = start_addr >> MMU_SECTION_SHIFT;
     const uint32_t last_addr = start_addr + size_bytes;
@@ -225,7 +234,7 @@ static void map_identity_range(uint32_t start_addr, uint32_t size_bytes,
     for (uint32_t mb = first_mb; mb < last_mb_exclusive; mb++) {
         const uint32_t base = mb << MMU_SECTION_SHIFT;
         mmu_set_l1_entry((void *)(uintptr_t)base,
-                         mmu_l1_section((void *)(uintptr_t)base, perm, xn, pxn, domain));
+                         mmu_l1_section((void *)(uintptr_t)base, perm, xn, pxn));
     }
 }
 
@@ -237,8 +246,9 @@ void mmu_init(void) {
         const uint32_t base = mb << MMU_SECTION_SHIFT;
         mmu_set_l1_entry((void *)(uintptr_t)base,
                          mmu_l1_section((void *)(uintptr_t)base, 
-                                       PERM_FULL_ACCESS, false, false, MMU_DOMAIN_KERNEL));
+                                       PERM_FULL_ACCESS, false, false));
     }
+
 
     cp15_write_ttbcr(0u);
     cp15_write_ttbr0((uint32_t)(uintptr_t)l1_page_table);
@@ -251,6 +261,7 @@ void mmu_init(void) {
 
     check_mmu_1_to_1(l1_page_table);
 }
+
 void mmu_setup_protection(void) {
     l1_fill_fault();
 
@@ -268,57 +279,51 @@ void mmu_setup_protection(void) {
     const uint32_t user_data_bss_start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
     const uint32_t user_data_bss_end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
 
-/* Map first 1 MiB (contains .init and boot stack) */
-/* Must be PERM_RW_NA so the kernel can still use its stack! */
-    map_identity_range(0x0, 0x100000, PERM_RW_NA, false, false, MMU_DOMAIN_KERNEL);
-
-    /* Kernel text: Manager domain → kernel can execute, user gets fault on access */
-    map_identity_range(kernel_text_start, kernel_text_end - kernel_text_start,
-                    PERM_R_NA, false, false, MMU_DOMAIN_KERNEL);
-
-    /* Kernel rodata: Manager domain */
-    map_identity_range(kernel_rodata_start, kernel_rodata_end - kernel_rodata_start,
-                    PERM_R_NA, true, false, MMU_DOMAIN_KERNEL);
-
-    /* Kernel data/bss: Manager domain */
-    map_identity_range(kernel_data_bss_start, kernel_data_bss_end - kernel_data_bss_start,
-                    PERM_RW_NA, true, false, MMU_DOMAIN_KERNEL);
-
-    /* User text: Client domain → permission checks apply */
-    map_identity_range(user_text_start, user_text_end - user_text_start,
-                    PERM_R_R, false, true, MMU_DOMAIN_USER_EXEC);
-
-    /* User rodata: Client domain */
-    map_identity_range(user_rodata_start, user_rodata_end - user_rodata_start,
-                    PERM_R_R, true, false, MMU_DOMAIN_USER_EXEC);
-
-    /* User data/bss: Client domain */
-    map_identity_range(user_data_bss_start, user_data_bss_end - user_data_bss_start,
-                    PERM_FULL_ACCESS, true, false, MMU_DOMAIN_USER_EXEC);
-
-    /* Peripherals: Manager domain */
-    map_identity_range(MMU_PERIPH_BASE, MMU_PERIPH_SIZE_BYTES,
-                      PERM_RW_NA, true, false, MMU_DOMAIN_KERNEL);
     
-    /* Set up L2 page tables for thread stacks */
+    /* Kernel text: R, executable, kernel-only */
+    map_identity_range(kernel_text_start, kernel_text_end - kernel_text_start,
+                    PERM_R_NA, false, false);
+
+    /* Kernel rodata: R, XN, kernel-only */
+    map_identity_range(kernel_rodata_start, kernel_rodata_end - kernel_rodata_start,
+                    PERM_R_NA, true, false);
+
+    /* Kernel data/bss: RW, XN, kernel-only */
+    map_identity_range(kernel_data_bss_start, kernel_data_bss_end - kernel_data_bss_start,
+                    PERM_RW_NA, true, false);
+
+    /* User text: R/R, executable in user, PXN for privileged */
+    map_identity_range(user_text_start, user_text_end - user_text_start,
+                    PERM_R_R, false, true);
+
+    /* User rodata: R/R, XN */
+    map_identity_range(user_rodata_start, user_rodata_end - user_rodata_start,
+                    PERM_R_R, true, false);
+
+    /* User data/bss: RW/RW, XN */
+    map_identity_range(user_data_bss_start, user_data_bss_end - user_data_bss_start,
+                    PERM_FULL_ACCESS, true, false);
+
+    /* Peripherals: kernel-only, read/write, no execute */
+    map_identity_range(MMU_PERIPH_BASE, MMU_PERIPH_SIZE_BYTES,
+                      PERM_RW_NA, true, false);
+
+
     for (uint32_t tid = 0; tid < THREADS_MAX_COUNT; tid++) {
         const uint32_t win_base = THREADS_STACK_WIN_BASE(tid);
 
-        /* Point L1 entry to this thread's L2 table (use USER_EXEC domain) */
-        mmu_set_l1_entry((void *)(uintptr_t)win_base,
-                         mmu_l1_page_table(l2_stack_tables[tid].e, MMU_DOMAIN_USER_EXEC));
 
-        /* Initialize ALL L2 entries to fault (ensures upper guard) */
+        mmu_set_l1_entry((void *)(uintptr_t)win_base,
+                         mmu_l1_page_table(l2_stack_tables[tid].e));
+
+
         for (uint32_t i = 0; i < MMU_L2_ENTRIES; i++) {
             l2_stack_tables[tid].e[i] = mmu_l2_fault();
         }
 
-        /* Page 0: Lower guard (already fault from loop above) */
-        /* Page 1: Actual stack - 4 KiB at virtual offset 0x1000 */
         l2_stack_tables[tid].e[1] = mmu_l2_small_page(&thread_stacks_phys[tid][0],
                                                      PERM_FULL_ACCESS,
                                                      true);
-        /* Page 2+: Upper guards (already fault from loop above) */
     }
 
     barrier_dsb();
@@ -326,20 +331,12 @@ void mmu_setup_protection(void) {
     barrier_dsb();
     barrier_isb();
     
-    /* Re-write TTBR0 to force TLB context switch */
-    cp15_write_ttbr0((uint32_t)(uintptr_t)l1_page_table);
-    barrier_isb();
 }
 
 void mmu_enable(void) {
     cp15_write_ttbcr(0u);
     cp15_write_ttbr0((uint32_t)(uintptr_t)l1_page_table);
-    
-    /* Both domains as Client to enforce permission checks */
-    cp15_write_dacr(
-        DACR_DOMAIN_MODE(MMU_DOMAIN_KERNEL, DACR_DOMAIN_MODE_CLIENT) |
-        DACR_DOMAIN_MODE(MMU_DOMAIN_USER_EXEC, DACR_DOMAIN_MODE_CLIENT)
-    );
+    cp15_write_dacr(DACR_DOMAIN_MODE(MMU_DOMAIN_KERNEL, DACR_DOMAIN_MODE_CLIENT));
 
     barrier_dsb();
     tlb_invalidate_all();
