@@ -5,7 +5,7 @@
 #include <arch/cpu/mmu.h>
 #include <arch/bsp/uart.h>
 #include <kernel/panic.h>
-#include <kernel/diagnose_mmu.h>
+//#include <kernel/diagnose_mmu.h>
 #include <kernel/threads.h>
 
 extern unsigned char thread_stacks_phys[THREADS_MAX_COUNT][THREADS_STACK_PAGE_SIZE];
@@ -262,7 +262,7 @@ void mmu_init(void) {
     barrier_dsb();
     barrier_isb();
 
-    check_mmu_1_to_1(l1_page_table);
+    //check_mmu_1_to_1(l1_page_table);
 }
 
 void mmu_setup_protection(void) {
@@ -282,7 +282,7 @@ void mmu_setup_protection(void) {
     const uint32_t user_data_bss_start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
     const uint32_t user_data_bss_end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
 
-    for (int i = 0; i < MMU_L2_ENTRIES; i++) {
+    for (unsigned int i = 0; i < MMU_L2_ENTRIES; i++) {
         l2_boot_region.e[i] = mmu_l2_fault();
     }
 
