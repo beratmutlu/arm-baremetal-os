@@ -307,11 +307,11 @@ void mmu_setup_protection(void) {
 
     /* Kernel rodata: R, XN, kernel-only */
     map_identity_range(kernel_rodata_start, kernel_rodata_end - kernel_rodata_start,
-                    PERM_R_NA, true, false);
+                    PERM_R_NA, true, true);
 
     /* Kernel data/bss: RW, XN, kernel-only */
     map_identity_range(kernel_data_bss_start, kernel_data_bss_end - kernel_data_bss_start,
-                    PERM_RW_NA, true, false);
+                    PERM_RW_NA, true, true);
 
     /* User text: R/R, executable in user, PXN for privileged */
     map_identity_range(user_text_start, user_text_end - user_text_start,
@@ -319,15 +319,15 @@ void mmu_setup_protection(void) {
 
     /* User rodata: R/R, XN */
     map_identity_range(user_rodata_start, user_rodata_end - user_rodata_start,
-                    PERM_R_R, true, false);
+                    PERM_R_R, true, true);
 
     /* User data/bss: RW/RW, XN */
     map_identity_range(user_data_bss_start, user_data_bss_end - user_data_bss_start,
-                    PERM_FULL_ACCESS, true, false);
+                    PERM_FULL_ACCESS, true, true);
 
     /* Peripherals: kernel-only, read/write, no execute */
     map_identity_range(MMU_PERIPH_BASE, MMU_PERIPH_SIZE_BYTES,
-                      PERM_RW_NA, true, false);
+                      PERM_RW_NA, true, true);
 
 
     for (uint32_t tid = 0; tid < THREADS_MAX_COUNT; tid++) {
