@@ -11,6 +11,29 @@
 extern unsigned char thread_stacks_phys[THREADS_MAX_COUNT][THREADS_STACK_PAGE_SIZE];
 
 
+/* Exception-mode stacks + guards (defined in stacks.c) */
+extern unsigned char svc_stack_guard_lower[4096];
+extern unsigned char svc_stack[4096];
+extern unsigned char svc_stack_guard_upper[4096];
+
+extern unsigned char irq_stack_guard_lower[4096];
+extern unsigned char irq_stack[4096];
+extern unsigned char irq_stack_guard_upper[4096];
+
+extern unsigned char abt_stack_guard_lower[4096];
+extern unsigned char abt_stack[4096];
+extern unsigned char abt_stack_guard_upper[4096];
+
+extern unsigned char und_stack_guard_lower[4096];
+extern unsigned char und_stack[4096];
+extern unsigned char und_stack_guard_upper[4096];
+
+extern unsigned char sys_stack_guard_lower[4096];
+extern unsigned char sys_stack[4096];
+extern unsigned char sys_stack_guard_upper[4096];
+
+
+
 extern char ld_section_kernel_text;
 extern char ld_section_kernel_text_end;
 extern char ld_section_kernel_rodata;
@@ -77,6 +100,63 @@ typedef struct l2_table_aligned {
 static l2_table_t l2_stack_tables[THREADS_MAX_COUNT];
 
 static l2_table_t l2_boot_region;
+
+
+/*
+ * Guard pages for the CPU mode stacks live in .bss next to normal kernel data.
+ * The tests expect the pages directly before/after each mode stack to be *unmapped*.
+ *
+ * Because the kernel .data/.bss is currently mapped via 1 MiB sections, we
+ * override only the 1 MiB section(s) that contain those guard pages with a
+ * coarse L2 page table and then punch "holes" (fault entries) for the guard pages.
+ */
+#define KERNEL_GUARD_L2_MAX_SECTIONS  4u
+
+static l2_table_t l2_kernel_guard_tables[KERNEL_GUARD_L2_MAX_SECTIONS];
+static uint32_t   l2_kernel_guard_sec_base[KERNEL_GUARD_L2_MAX_SECTIONS];
+static uint32_t   l2_kernel_guard_sec_count = 0u;
+
+static l2_table_t *kernel_guard_get_or_init_table(uint32_t sec_base_1mb)
+{
+    for (uint32_t i = 0; i < l2_kernel_guard_sec_count; i++) {
+        if (l2_kernel_guard_sec_base[i] == sec_base_1mb) {
+            return &l2_kernel_guard_tables[i];
+        }
+    }
+
+    if (l2_kernel_guard_sec_count >= KERNEL_GUARD_L2_MAX_SECTIONS) {
+        panic("MMU: too many kernel guard-page sections");
+    }
+
+    const uint32_t idx = l2_kernel_guard_sec_count++;
+    l2_kernel_guard_sec_base[idx] = sec_base_1mb;
+
+    /* Default: map the whole 1 MiB as kernel RW, user NA, XN (identity). */
+    for (uint32_t i = 0; i < MMU_L2_ENTRIES; i++) {
+        const uint32_t pa = sec_base_1mb + (i * MMU_SMALL_PAGE_SIZE);
+        l2_kernel_guard_tables[idx].e[i] =
+            mmu_l2_small_page((void *)(uintptr_t)pa, PERM_RW_NA, true);
+    }
+
+    /* Replace the L1 section mapping with this L2 table for that 1 MiB window. */
+    mmu_set_l1_entry((void *)(uintptr_t)sec_base_1mb,
+                     mmu_l1_page_table(l2_kernel_guard_tables[idx].e));
+
+    return &l2_kernel_guard_tables[idx];
+}
+
+static void kernel_guard_unmap_page(void *page_addr_any)
+{
+    uint32_t va = (uint32_t)(uintptr_t)page_addr_any;
+    va &= ~MMU_ALIGN_MASK(MMU_SMALL_PAGE_SIZE);                 /* 4 KiB page base */
+
+    const uint32_t sec_base = (va & L1_SECTION_BASE_MASK);      /* 1 MiB base */
+    l2_table_t *t = kernel_guard_get_or_init_table(sec_base);
+
+    const uint32_t l2_idx = (va >> MMU_SMALL_PAGE_SHIFT) & (MMU_L2_ENTRIES - 1u);
+    t->e[l2_idx] = mmu_l2_fault();                              /* unmapped guard page */
+}
+
 
 static inline bool is_aligned_uint(uint32_t addr, uint32_t alignment_bytes) {
     return (addr & MMU_ALIGN_MASK(alignment_bytes)) == 0u;
@@ -313,6 +393,20 @@ void mmu_setup_protection(void) {
     map_identity_range(kernel_data_bss_start, kernel_data_bss_end - kernel_data_bss_start,
                     PERM_RW_NA, true, true);
 
+
+/* Guard pages around every CPU mode stack (SVC/IRQ/ABT/UND/SYS). */
+l2_kernel_guard_sec_count = 0u; /* reset in case mmu_setup_protection is called again */
+kernel_guard_unmap_page(svc_stack_guard_lower);
+kernel_guard_unmap_page(svc_stack_guard_upper);
+kernel_guard_unmap_page(irq_stack_guard_lower);
+kernel_guard_unmap_page(irq_stack_guard_upper);
+kernel_guard_unmap_page(abt_stack_guard_lower);
+kernel_guard_unmap_page(abt_stack_guard_upper);
+kernel_guard_unmap_page(und_stack_guard_lower);
+kernel_guard_unmap_page(und_stack_guard_upper);
+kernel_guard_unmap_page(sys_stack_guard_lower);
+kernel_guard_unmap_page(sys_stack_guard_upper);
+
     /* User text: R/R, executable in user, PXN for privileged */
     map_identity_range(user_text_start, user_text_end - user_text_start,
                     PERM_R_R, false, true);
@@ -336,15 +430,17 @@ void mmu_setup_protection(void) {
 
         mmu_set_l1_entry((void *)(uintptr_t)win_base,
                          mmu_l1_page_table(l2_stack_tables[tid].e));
-
-
         for (uint32_t i = 0; i < MMU_L2_ENTRIES; i++) {
             l2_stack_tables[tid].e[i] = mmu_l2_fault();
         }
 
+        /* page 0: lower guard (unmapped) */
+        /* page 1: stack page */
+        /* page 2: upper guard (unmapped) */
         l2_stack_tables[tid].e[1] = mmu_l2_small_page(&thread_stacks_phys[tid][0],
                                                      PERM_FULL_ACCESS,
                                                      true);
+        l2_stack_tables[tid].e[2] = mmu_l2_fault();
     }
 
     barrier_dsb();
