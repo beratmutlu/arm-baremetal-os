@@ -13,63 +13,68 @@ PAGE_SIZE             = 0x00001000;  /* 4 KiB */
 
 SECTIONS
 {
-	. = KERNEL_INIT_BASE;
-	.init : ALIGN(PAGE_SIZE) { *(.init) }
-	ld_section_init_end = .;
+    . = KERNEL_INIT_BASE;
+    .init : ALIGN(PAGE_SIZE) { *(.init .init.*) }
+    ld_section_init_end = .;
 
-	. = KERNEL_TEXT_BASE;
-	ld_section_kernel_text = .;
-	.text : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.text)
-		build/arch/*.o(.text)
-		build/kernel/*.o(.text)
-	}
-	ld_section_kernel_text_end = .;
+    . = KERNEL_TEXT_BASE;
+    ld_section_kernel_text = .;
+    .text : ALIGN(PAGE_SIZE) {
+        *(EXCLUDE_FILE (build/user/*.o) .text .text.*)
+        *(EXCLUDE_FILE (build/user/*.o) .vectors .vectors.*)
+        *(EXCLUDE_FILE (build/user/*.o) .glue_7 .glue_7t)
+    }
+    ld_section_kernel_text_end = .;
 
-	. = KERNEL_RODATA_BASE;
-	ld_section_kernel_rodata = .;
-	.rodata : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.rodata .rodata.*)
-		build/arch/*.o(.rodata .rodata.*)
-		build/kernel/*.o(.rodata .rodata.*)
-	}
-	ld_section_kernel_rodata_end = .;
+    . = KERNEL_RODATA_BASE;
+    ld_section_kernel_rodata = .;
+    .rodata : ALIGN(PAGE_SIZE) {
+        *(EXCLUDE_FILE (build/user/*.o) .rodata .rodata.*)
 
-	. = KERNEL_DATA_BSS_BASE;
-	ld_section_kernel_data_bss = .;
-	.data : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.data)
-		build/arch/*.o(.data)
-		build/kernel/*.o(.data)
-	}
-	.bss : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.bss)
-		build/arch/*.o(.bss)
-		build/kernel/*.o(.bss)
-	}
-	ld_section_kernel_data_bss_end = .;
+        *(EXCLUDE_FILE (build/user/*.o) .ARM.exidx .ARM.exidx.*)
+        *(EXCLUDE_FILE (build/user/*.o) .ARM.extab .ARM.extab.*)
+    }
+    ld_section_kernel_rodata_end = .;
 
-	. = USER_TEXT_BASE;
-	ld_section_user_text = .;
-	.utext : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.text)
-	}
-	ld_section_user_text_end = .;
+    . = KERNEL_DATA_BSS_BASE;
+    ld_section_kernel_data_bss = .;
+    .data : ALIGN(PAGE_SIZE) {
+        *(EXCLUDE_FILE (build/user/*.o) .data .data.*)
+        *(EXCLUDE_FILE (build/user/*.o) .got .got.* .got.plt .got.plt.*)
+    }
+    .bss : ALIGN(PAGE_SIZE) {
+        *(EXCLUDE_FILE (build/user/*.o) .bss .bss.*)
+        *(COMMON)
+    }
+    ld_section_kernel_data_bss_end = .;
 
-	. = USER_RODATA_BASE;
-	ld_section_user_rodata = .;
-	.urodata : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.rodata .rodata.*)
-	}
-	ld_section_user_rodata_end = .;
+    . = USER_TEXT_BASE;
+    ld_section_user_text = .;
+    .utext : ALIGN(PAGE_SIZE) {
+        build/user/*.o(.text .text.*)
+    }
+    ld_section_user_text_end = .;
 
-	. = USER_DATA_BSS_BASE;
-	ld_section_user_data_bss = .;
-	.udata : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.data)
-	}
-	.ubss : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.bss)
-	}
-	ld_section_user_data_bss_end = .;
+    . = USER_RODATA_BASE;
+    ld_section_user_rodata = .;
+    .urodata : ALIGN(PAGE_SIZE) {
+        build/user/*.o(.rodata .rodata.*)
+    }
+    ld_section_user_rodata_end = .;
+
+    . = USER_DATA_BSS_BASE;
+    ld_section_user_data_bss = .;
+    .udata : ALIGN(PAGE_SIZE) {
+        build/user/*.o(.data .data.*)
+    }
+    .ubss : ALIGN(PAGE_SIZE) {
+        build/user/*.o(.bss .bss.*)
+    }
+    ld_section_user_data_bss_end = .;
+    /DISCARD/ : {
+        *(.comment)
+        *(.note*)
+        *(.debug*)
+        *(.eh_frame*)
+    }
 }
