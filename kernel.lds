@@ -23,6 +23,7 @@ SECTIONS
 		*lib*.a:*(.text)
 		build/arch/*.o(.text)
 		build/kernel/*.o(.text)
+		EXCLUDE_FILE (build/user/*.o) *(.text)
 	}
 	ld_section_kernel_text_end = .;
 
@@ -32,6 +33,7 @@ SECTIONS
 		*lib*.a:*(.rodata .rodata.*)
 		build/arch/*.o(.rodata .rodata.*)
 		build/kernel/*.o(.rodata .rodata.*)
+		EXCLUDE_FILE (build/user/*.o) *(.rodata .rodata.*)
 	}
 	ld_section_kernel_rodata_end = .;
 
@@ -41,11 +43,14 @@ SECTIONS
 		*lib*.a:*(.data)
 		build/arch/*.o(.data)
 		build/kernel/*.o(.data)
+		EXCLUDE_FILE (build/user/*.o) *(.data)
 	}
 	.bss : ALIGN(PAGE_SIZE) {
 		*lib*.a:*(.bss)
 		build/arch/*.o(.bss)
 		build/kernel/*.o(.bss)
+		EXCLUDE_FILE (build/user/*.o) *(.bss)
+		*(COMMON)
 	}
 	ld_section_kernel_data_bss_end = .;
 
