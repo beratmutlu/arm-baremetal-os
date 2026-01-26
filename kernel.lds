@@ -22,14 +22,13 @@ SECTIONS
 	. = KERNEL_TEXT_BASE;
 	ld_section_kernel_text = .;
 	.text : ALIGN(PAGE_SIZE) {
-		/*
-		 * Important: EXCLUDE_FILE must be OUTSIDE the section list if you want
-		 * the exclusion to apply to ALL of the listed sections.
-		 */
 		EXCLUDE_FILE (build/user/*.o build/user/*/*.o) *(
 			.text .text.*
 			.vectors .vectors.*
 			.glue_7 .glue_7t
+			.plt .plt.*
+			.fini .fini.*
+			.gnu.linkonce.t.*
 		)
 	}
 	ld_section_kernel_text_end = .;
@@ -43,6 +42,8 @@ SECTIONS
 			.ARM.extab .ARM.extab.*
 			.init_array .init_array.*
 			.fini_array .fini_array.*
+			.jcr
+			.gnu.linkonce.r.*
 		)
 	}
 	ld_section_kernel_rodata_end = .;
@@ -53,6 +54,8 @@ SECTIONS
 		EXCLUDE_FILE (build/user/*.o build/user/*/*.o) *(
 			.data .data.*
 			.got .got.* .got.plt .got.plt.*
+			.data.rel.ro .data.rel.ro.*
+			.gnu.linkonce.d.*
 		)
 	}
 	.bss : ALIGN(PAGE_SIZE) {
