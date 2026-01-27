@@ -20,10 +20,10 @@ SECTIONS
 	. = KERNEL_TEXT_BASE;
 	ld_section_kernel_text = .;
 	.text : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.text)
-		build/arch/*.o(.text)
-		build/kernel/*.o(.text)
-		EXCLUDE_FILE (build/user/*.o) *(.text)
+		*lib*.a:*(.text .text.*)
+		build/arch/*.o(.text .text.*)
+		build/kernel/*.o(.text .text.*)
+		EXCLUDE_FILE (build/user/*.o) *(.text .text.*)
 	}
 	ld_section_kernel_text_end = .;
 
@@ -40,16 +40,16 @@ SECTIONS
 	. = KERNEL_DATA_BSS_BASE;
 	ld_section_kernel_data_bss = .;
 	.data : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.data)
-		build/arch/*.o(.data)
-		build/kernel/*.o(.data)
-		EXCLUDE_FILE (build/user/*.o) *(.data)
+		*lib*.a:*(.data .data.*)
+		build/arch/*.o(.data .data.*)
+		build/kernel/*.o(.data .data.*)
+		EXCLUDE_FILE (build/user/*.o) *(.data .data.*)
 	}
 	.bss : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.bss)
-		build/arch/*.o(.bss)
-		build/kernel/*.o(.bss)
-		EXCLUDE_FILE (build/user/*.o) *(.bss)
+		*lib*.a:*(.bss .bss.*)
+		build/arch/*.o(.bss .bss.*)
+		build/kernel/*.o(.bss .bss.*)
+		EXCLUDE_FILE (build/user/*.o) *(.bss .bss.*)
 		*(COMMON)
 	}
 	ld_section_kernel_data_bss_end = .;
@@ -57,7 +57,7 @@ SECTIONS
 	. = USER_TEXT_BASE;
 	ld_section_user_text = .;
 	.utext : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.text)
+		build/user/*.o(.text .text.*)
 	}
 	ld_section_user_text_end = .;
 
@@ -71,10 +71,10 @@ SECTIONS
 	. = USER_DATA_BSS_BASE;
 	ld_section_user_data_bss = .;
 	.udata : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.data)
+		build/user/*.o(.data .data.*)
 	}
 	.ubss : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.bss)
+		build/user/*.o(.bss .bss.*)
 	}
 	ld_section_user_data_bss_end = .;
 }
