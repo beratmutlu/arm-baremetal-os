@@ -5,7 +5,7 @@
 #include <arch/cpu/mmu.h>
 #include <arch/bsp/uart.h>
 #include <kernel/panic.h>
-//#include <kernel/diagnose_mmu.h>
+#include <kernel/diagnose_mmu.h>
 #include <kernel/threads.h>
 
 extern unsigned char thread_stacks_phys[THREADS_MAX_COUNT][THREADS_STACK_PAGE_SIZE];
@@ -342,7 +342,7 @@ void mmu_init(void) {
     barrier_dsb();
     barrier_isb();
 
-    //check_mmu_1_to_1(l1_page_table);
+    check_mmu_1_to_1(l1_page_table);
 }
 
 void mmu_setup_protection(void) {

@@ -16,6 +16,7 @@
 
 extern bool irq_debug;
 extern void register_checker(void);
+extern void test_kernel(void);
 
 void main [[gnu::weak]] (void *args);
 
