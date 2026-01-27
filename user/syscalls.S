@@ -4,6 +4,19 @@
 
 #include <user/syscalls.h>
 
+/* user/syscalls.S */
+/* 
+ * Syscall Calling Convention:
+ * 
+ * Register R7: Syscall Number/ID
+ * Register R0: Argument 1
+ * Register R1: Argument 2
+ * Register R2: Argument 3
+ * Register R3: Argument 4
+ * 
+ * Return Value: Stored in R0 upon return.
+ */
+ 
 .global syscall_exit
 .global syscall_create_thread
 .global syscall_getc

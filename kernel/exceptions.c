@@ -49,7 +49,7 @@ void svc_handler_c(struct exc_frame *frame) {
         void *args        = (void *)(uintptr_t)frame->r[1];
         unsigned arg_size = (unsigned)frame->r[2];
 
-        if (!f) {
+        if (!f || (uintptr_t)f >= 0x08000000 || arg_size > 4000) {
             scheduler_on_thread_exit(frame);
             break;
         }
@@ -153,15 +153,22 @@ void irq_handler_c(struct exc_frame *frame) {
             }
             (void)dummy;
         }
-    } 
+    }
+    bool woke_up = false; 
     while (!is_io_queue_empty() && !is_ring_empty()) {
         scheduler_wake_blocked_on_io(uart_getc());
+        woke_up = true;
     }
 
-    if (pending1 & IRQCTRL_TIMER_C1_BIT) {
-        clear_timer_interrupt();
-        set_next_timer_interrupt();
-        scheduler_update_sleep_q();
-        scheduler_on_timer(frame);
-    }
+  bool timer_tick = (pending1 & IRQCTRL_TIMER_C1_BIT) != 0;
+
+  if (timer_tick) {
+    clear_timer_interrupt();
+    set_next_timer_interrupt();
+    scheduler_update_sleep_q();
+  }
+
+  if (timer_tick || (woke_up && scheduler_curr()->is_idle)) {
+    scheduler_on_timer(frame);
+  }
 }
