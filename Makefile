@@ -98,7 +98,7 @@ endif
 LDFLAGS =
 
 # Hier den git branch angeben, der für die Abgabe benutzt werden soll
-SUBMISSION_BRANCH = main
+SUBMISSION_BRANCH = a5_from_a4_2
 
 # Wenn ihr zuhause auf der Hardware arbeitet, hier das TFTP-Verzeichnis eintragen
 TFTP_PATH = /srv/tftp
