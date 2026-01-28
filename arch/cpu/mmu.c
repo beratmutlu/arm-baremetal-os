@@ -334,7 +334,7 @@ void mmu_init(void) {
     barrier_dsb();
     barrier_isb();
 
-    //check_mmu_1_to_1(l1_page_table);
+    check_mmu_1_to_1(l1_page_table);
 }
 
 void mmu_setup_protection(void) {
