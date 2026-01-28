@@ -3,7 +3,7 @@
 #include <user/syscalls.h>
 #include <stdint.h>
 #include <user/mmu_triggers.h>
-
+#include <user/main.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winfinite-recursion"
@@ -49,6 +49,9 @@ void user_prog(void * arg) {
 }
 
 void main (void) {
+
+	test_user_main();
+
 	while(true){
 		char c = syscall_getc();
 		syscall_create_thread(user_prog, &c, sizeof(c));

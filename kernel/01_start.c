@@ -13,13 +13,18 @@
 #include <kernel/scheduler.h>
 #include <arch/cpu/mmu.h>
 #include <kernel/diagnose_mmu.h>
+#include <kernel/panic.h>
 
 extern bool irq_debug;
 extern void register_checker(void);
 extern void test_kernel(void);
 
-void main [[gnu::weak]] (void *args);
-
+void main [[gnu::weak]] (void);
+void main [[noreturn, gnu::weak]] (void)
+{
+	panic("User main thread not properly linked");
+    __builtin_unreachable();
+}
 void start_kernel[[noreturn]](void);
 void start_kernel[[noreturn]](void) {
     uart_init();
@@ -38,7 +43,7 @@ void start_kernel[[noreturn]](void) {
 
     kprintf("=== Betriebssystem gestartet ===\n");
     test_kernel();
-    scheduler_thread_create(main, NULL, 0);
+    scheduler_thread_create((void (*)(void *))main, NULL, 0);
     scheduler_start();
 
     __builtin_unreachable();
