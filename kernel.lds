@@ -1,75 +1,78 @@
 ENTRY(_start)
 
-KERNEL_INIT_BASE      = 0x00008000;
-KERNEL_TEXT_BASE      = 0x00100000;
-KERNEL_RODATA_BASE    = 0x00200000;
-KERNEL_DATA_BSS_BASE  = 0x00300000;
-
-USER_TEXT_BASE        = 0x00500000;
-USER_RODATA_BASE      = 0x00600000;
-USER_DATA_BSS_BASE    = 0x00700000;
-
-PAGE_SIZE             = 0x00001000;  /* 4 KiB */
+PAGE_SIZE = 0x1000;      /* 4 KiB */
+MB       = 0x100000;     /* 1 MiB */
 
 SECTIONS
 {
-	. = KERNEL_INIT_BASE;
-	.init : ALIGN(PAGE_SIZE) { *(.init) }
-	ld_section_init_end = .;
+  . = 0x00008000;
+  .init : ALIGN(PAGE_SIZE)
+  {
+    *(.init .init.*)
+  }
+  ld_section_init_end = .;
 
-	. = KERNEL_TEXT_BASE;
-	ld_section_kernel_text = .;
-	.text : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.text)
-		build/arch/*.o(.text)
-		build/kernel/*.o(.text)
-	}
-	ld_section_kernel_text_end = .;
+  ld_section_kernel_text = .;
+  .text : ALIGN(PAGE_SIZE)
+  {
+    *lib*.a:*(.text .text.*)
+    build/arch/*.o(.text .text.*)
+    build/kernel/*.o(.text .text.*)
+  }
+  ld_section_kernel_text_end = .;
 
-	. = KERNEL_RODATA_BASE;
-	ld_section_kernel_rodata = .;
-	.rodata : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.rodata .rodata.*)
-		build/arch/*.o(.rodata .rodata.*)
-		build/kernel/*.o(.rodata .rodata.*)
-	}
-	ld_section_kernel_rodata_end = .;
+  ld_section_kernel_rodata = .;
+  .rodata : ALIGN(PAGE_SIZE)
+  {
+    *lib*.a:*(.rodata .rodata.*)
+    build/arch/*.o(.rodata .rodata.*)
+    build/kernel/*.o(.rodata .rodata.*)
+  }
+  ld_section_kernel_rodata_end = .;
 
-	. = KERNEL_DATA_BSS_BASE;
-	ld_section_kernel_data_bss = .;
-	.data : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.data)
-		build/arch/*.o(.data)
-		build/kernel/*.o(.data)
-	}
-	.bss : ALIGN(PAGE_SIZE) {
-		*lib*.a:*(.bss)
-		build/arch/*.o(.bss)
-		build/kernel/*.o(.bss)
-	}
-	ld_section_kernel_data_bss_end = .;
+  . = ALIGN(MB);
 
-	. = USER_TEXT_BASE;
-	ld_section_user_text = .;
-	.utext : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.text)
-	}
-	ld_section_user_text_end = .;
+  ld_section_kernel_data_bss = .;
+  .data : ALIGN(PAGE_SIZE)
+  {
+    *lib*.a:*(.data .data.*)
+    build/arch/*.o(.data .data.*)
+    build/kernel/*.o(.data .data.*)
+  }
 
-	. = USER_RODATA_BASE;
-	ld_section_user_rodata = .;
-	.urodata : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.rodata .rodata.*)
-	}
-	ld_section_user_rodata_end = .;
+  .bss : ALIGN(PAGE_SIZE)
+  {
+    *lib*.a:*(.bss .bss.* COMMON)
+    build/arch/*.o(.bss .bss.* COMMON)
+    build/kernel/*.o(.bss .bss.* COMMON)
+  }
+  ld_section_kernel_data_bss_end = .;
 
-	. = USER_DATA_BSS_BASE;
-	ld_section_user_data_bss = .;
-	.udata : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.data)
-	}
-	.ubss : ALIGN(PAGE_SIZE) {
-		build/user/*.o(.bss)
-	}
-	ld_section_user_data_bss_end = .;
+  . = ALIGN(MB);
+
+  ld_section_user_text = .;
+  .utext : ALIGN(PAGE_SIZE)
+  {
+    build/user/*.o(.text .text.*)
+  }
+  ld_section_user_text_end = .;
+
+  ld_section_user_rodata = .;
+  .urodata : ALIGN(PAGE_SIZE)
+  {
+    build/user/*.o(.rodata .rodata.*)
+  }
+  ld_section_user_rodata_end = .;
+
+  ld_section_user_data_bss = .;
+  .udata : ALIGN(PAGE_SIZE)
+  {
+    build/user/*.o(.data .data.*)
+  }
+
+  .ubss : ALIGN(PAGE_SIZE)
+  {
+    build/user/*.o(.bss .bss.* COMMON)
+  }
+  ld_section_user_data_bss_end = .;
 }
