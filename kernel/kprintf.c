@@ -19,7 +19,7 @@ static void uart_putc_adapter(char c, void *ctx) {
     uart_putc(c);
 }
 
-void kprintf(const char *fmt, ...){
+void kprintf [[gnu::format(printf, 1, 2)]] (const char *fmt, ...){
     va_list ap;
     va_start(ap, fmt);
     kvprintf(uart_putc_adapter, NULL, fmt, ap);

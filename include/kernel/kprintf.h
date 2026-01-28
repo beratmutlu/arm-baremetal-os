@@ -23,6 +23,6 @@
  * @param fmt Format string (must not be NULL).
  * @param ... Arguments according to @p fmt.
  */
-void kprintf(const char *fmt, ...);
+void kprintf [[gnu::format(printf, 1, 2)]] (const char *fmt, ...);
 
 #endif /* KPRINTF_H */
