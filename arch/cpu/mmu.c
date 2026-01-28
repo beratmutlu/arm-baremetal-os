@@ -356,9 +356,9 @@ static void setup_kernel_sections(void) {
     map_identity_range(kernel_text_start, kernel_text_end - kernel_text_start,
                       PERM_R_NA, false, false);
     map_identity_range(kernel_rodata_start, kernel_rodata_end - kernel_rodata_start,
-                      PERM_R_NA, true, true);
+                      PERM_R_NA, true, false);
     map_identity_range(kernel_data_bss_start, kernel_data_bss_end - kernel_data_bss_start,
-                      PERM_RW_NA, true, true);
+                      PERM_RW_NA, true, false);
 }
 
 static void setup_user_sections(void) {
@@ -372,9 +372,9 @@ static void setup_user_sections(void) {
     map_identity_range(user_text_start, user_text_end - user_text_start,
                       PERM_R_R, false, true);
     map_identity_range(user_rodata_start, user_rodata_end - user_rodata_start,
-                      PERM_R_R, true, true);
+                      PERM_R_R, true, false);
     map_identity_range(user_data_bss_start, user_data_bss_end - user_data_bss_start,
-                      PERM_FULL_ACCESS, true, true);
+                      PERM_FULL_ACCESS, true, false);
 }
 
 static void setup_thread_stacks(void) {
@@ -420,7 +420,7 @@ void mmu_setup_protection(void) {
     setup_user_sections();
 
     map_identity_range(MMU_PERIPH_BASE, MMU_PERIPH_SIZE_BYTES,
-                      PERM_RW_NA, true, true);
+                      PERM_RW_NA, true, false);
 
     setup_thread_stacks();
 
