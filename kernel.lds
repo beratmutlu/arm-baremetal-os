@@ -20,6 +20,7 @@ SECTIONS
 	. = KERNEL_TEXT_BASE;
 	ld_section_kernel_text = .;
 	.text : ALIGN(PAGE_SIZE) {
+		*lib*.a:*(.text)
 		build/arch/*.o(.text)
 		build/kernel/*.o(.text)
 	}
@@ -28,6 +29,7 @@ SECTIONS
 	. = KERNEL_RODATA_BASE;
 	ld_section_kernel_rodata = .;
 	.rodata : ALIGN(PAGE_SIZE) {
+		*lib*.a:*(.rodata .rodata.*)
 		build/arch/*.o(.rodata .rodata.*)
 		build/kernel/*.o(.rodata .rodata.*)
 	}
@@ -36,10 +38,12 @@ SECTIONS
 	. = KERNEL_DATA_BSS_BASE;
 	ld_section_kernel_data_bss = .;
 	.data : ALIGN(PAGE_SIZE) {
+		*lib*.a:*(.data)
 		build/arch/*.o(.data)
 		build/kernel/*.o(.data)
 	}
 	.bss : ALIGN(PAGE_SIZE) {
+		*lib*.a:*(.bss)
 		build/arch/*.o(.bss)
 		build/kernel/*.o(.bss)
 	}
