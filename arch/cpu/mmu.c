@@ -43,6 +43,7 @@ extern char ld_section_user_rodata_end;
 extern char ld_section_user_data_bss;
 extern char ld_section_user_data_bss_end;
 
+extern char ld_section_init_start;
 extern char ld_section_init_end;
 
 #define MMU_USABLE_RAM_SIZE_BYTES   (128u * 1024u * 1024u)
@@ -67,6 +68,10 @@ extern char ld_section_init_end;
 #define L2_SMALL_PAGE_XN_BIT        (1u << 0)
 #define L2_SMALL_PAGE_AP01_SHIFT    4u
 #define L2_SMALL_PAGE_AP2_BIT       (1u << 9)
+
+#define THREAD_STACK_GUARD_LOWER_IDX  0
+#define THREAD_STACK_PAGE_IDX         1
+#define THREAD_STACK_GUARD_UPPER_IDX  2
 
 #define MMU_DOMAIN_KERNEL           0u
 #define DACR_DOMAIN_MODE_NO_ACCESS  0x0u
@@ -325,7 +330,7 @@ static void setup_boot_region(void) {
         l2_boot_region.e[i] = mmu_l2_fault();
     }
 
-    const uint32_t init_start = 0x00008000;
+    const uint32_t init_start = (uint32_t)(uintptr_t)&ld_section_init_start;
     const uint32_t init_end = (uint32_t)(uintptr_t)&ld_section_init_end;
     const uint32_t init_end_aligned = (init_end + MMU_ALIGN_MASK(MMU_SMALL_PAGE_SIZE)) 
                                       & ~MMU_ALIGN_MASK(MMU_SMALL_PAGE_SIZE);
@@ -383,10 +388,10 @@ static void setup_thread_stacks(void) {
             l2_stack_tables[tid].e[i] = mmu_l2_fault();
         }
 
-        l2_stack_tables[tid].e[1] = mmu_l2_small_page(&thread_stacks_phys[tid][0],
-                                                     PERM_FULL_ACCESS,
-                                                     true);
-        l2_stack_tables[tid].e[2] = mmu_l2_fault();
+        l2_stack_tables[tid].e[THREAD_STACK_PAGE_IDX] = mmu_l2_small_page(&thread_stacks_phys[tid][0],
+                                                                         PERM_FULL_ACCESS,
+                                                                         true);
+        l2_stack_tables[tid].e[THREAD_STACK_GUARD_UPPER_IDX] = mmu_l2_fault();
     }
 }
 

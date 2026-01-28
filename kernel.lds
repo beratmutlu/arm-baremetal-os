@@ -14,6 +14,7 @@ PAGE_SIZE             = 0x00001000;  /* 4 KiB */
 SECTIONS
 {
 	. = KERNEL_INIT_BASE;
+	ld_section_init_start = .;
 	.init : ALIGN(PAGE_SIZE) { *(.init) }
 	ld_section_init_end = .;
 
