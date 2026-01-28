@@ -67,7 +67,7 @@
 #                            und reverse-continue "rückwärts" zu debuggen.
 
 # Binäre Lsg (falls verwendet, ansonsten leer lassen)
-BIN_LSG = mmu
+BIN_LSG = #mmu
 
 # Hier eure source files hinzufügen
 SRC = arch/cpu/mmu.c arch/cpu/entry.S kernel/threads.c kernel/scheduler.c arch/cpu/stacks.c kernel/01_start.c kernel/kprintf.c kernel/panic.c arch/bsp/yellow_led.c lib/ubsan.c lib/mem.c arch/bsp/uart.c lib/fmt.c lib/kvprintf.c kernel/exceptions.c arch/bsp/irq.c arch/bsp/systimer.c kernel/exception_print.c arch/cpu/vectors.S arch/cpu/traps.S arch/cpu/init_stacks.S arch/cpu/cpu.c tests/regcheck_asm.S tests/regcheck.c arch/cpu/banked_regs.c	kernel/exc_frame_layout.c

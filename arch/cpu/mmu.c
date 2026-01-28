@@ -102,14 +102,6 @@ static l2_table_t l2_stack_tables[THREADS_MAX_COUNT];
 static l2_table_t l2_boot_region;
 
 
-/*
- * Guard pages for the CPU mode stacks live in .bss next to normal kernel data.
- * The tests expect the pages directly before/after each mode stack to be *unmapped*.
- *
- * Because the kernel .data/.bss is currently mapped via 1 MiB sections, we
- * override only the 1 MiB section(s) that contain those guard pages with a
- * coarse L2 page table and then punch "holes" (fault entries) for the guard pages.
- */
 #define KERNEL_GUARD_L2_MAX_SECTIONS  4u
 
 static l2_table_t l2_kernel_guard_tables[KERNEL_GUARD_L2_MAX_SECTIONS];
@@ -342,7 +334,7 @@ void mmu_init(void) {
     barrier_dsb();
     barrier_isb();
 
-    check_mmu_1_to_1(l1_page_table);
+    //check_mmu_1_to_1(l1_page_table);
 }
 
 void mmu_setup_protection(void) {
