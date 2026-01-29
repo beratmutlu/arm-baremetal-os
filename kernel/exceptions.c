@@ -49,7 +49,7 @@ void svc_handler_c(struct exc_frame *frame) {
         void *args        = (void *)(uintptr_t)frame->r[1];
         unsigned arg_size = (unsigned)frame->r[2];
 
-        if (!f || (uintptr_t)f >= 0x08000000 || arg_size > 4000) {
+        if (!f || arg_size > 4000) {
             scheduler_on_thread_exit(frame);
             break;
         }

@@ -9,25 +9,25 @@
 
 extern unsigned char thread_stacks_phys[THREADS_MAX_COUNT][THREADS_STACK_PAGE_SIZE];
 
-extern unsigned char svc_stack_guard_lower[THREADS_STACK_PAGE_SIZE];
-extern unsigned char svc_stack[THREADS_STACK_PAGE_SIZE];
-extern unsigned char svc_stack_guard_upper[THREADS_STACK_PAGE_SIZE];
+extern volatile unsigned char svc_stack_guard_lower[];
+extern volatile unsigned char svc_stack[];
+extern volatile unsigned char svc_stack_guard_upper[];
 
-extern unsigned char irq_stack_guard_lower[THREADS_STACK_PAGE_SIZE];
-extern unsigned char irq_stack[THREADS_STACK_PAGE_SIZE];
-extern unsigned char irq_stack_guard_upper[THREADS_STACK_PAGE_SIZE];
+extern volatile unsigned char irq_stack_guard_lower[];
+extern volatile unsigned char irq_stack[];
+extern volatile unsigned char irq_stack_guard_upper[];
 
-extern unsigned char abt_stack_guard_lower[THREADS_STACK_PAGE_SIZE];
-extern unsigned char abt_stack[THREADS_STACK_PAGE_SIZE];
-extern unsigned char abt_stack_guard_upper[THREADS_STACK_PAGE_SIZE];
+extern volatile unsigned char abt_stack_guard_lower[];
+extern volatile unsigned char abt_stack[];
+extern volatile unsigned char abt_stack_guard_upper[];
 
-extern unsigned char und_stack_guard_lower[THREADS_STACK_PAGE_SIZE];
-extern unsigned char und_stack[THREADS_STACK_PAGE_SIZE];
-extern unsigned char und_stack_guard_upper[THREADS_STACK_PAGE_SIZE];
+extern volatile unsigned char und_stack_guard_lower[];
+extern volatile unsigned char und_stack[];
+extern volatile unsigned char und_stack_guard_upper[];
 
-extern unsigned char sys_stack_guard_lower[THREADS_STACK_PAGE_SIZE];
-extern unsigned char sys_stack[THREADS_STACK_PAGE_SIZE];
-extern unsigned char sys_stack_guard_upper[THREADS_STACK_PAGE_SIZE];
+extern volatile unsigned char sys_stack_guard_lower[];
+extern volatile unsigned char sys_stack[];
+extern volatile unsigned char sys_stack_guard_upper[];
 
 extern char ld_section_kernel_text;
 extern char ld_section_kernel_text_end;
@@ -305,8 +305,8 @@ static void kernel_guard_unmap_page(void *page_addr_any)
     t->e[l2_idx] = mmu_l2_fault();
 }
 
-static void setup_guard_page(unsigned char *guard_page) {
-    kernel_guard_unmap_page(guard_page);
+static void setup_guard_page(volatile unsigned char *guard_page) {
+    kernel_guard_unmap_page((void *)guard_page);
 }
 
 static void setup_kernel_stack_guards(void) {
@@ -337,7 +337,7 @@ static void setup_boot_region(void) {
     for (uint32_t addr = init_start; addr < init_end_aligned; addr += MMU_SMALL_PAGE_SIZE) {
         const uint32_t idx = (addr >> MMU_SMALL_PAGE_SHIFT) & (MMU_L2_ENTRIES - 1);
         l2_boot_region.e[idx] = mmu_l2_small_page((void *)(uintptr_t)addr,
-                                                  PERM_RW_NA,
+                                                  PERM_R_NA,
                                                   false);
     }
 
