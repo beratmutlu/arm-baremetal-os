@@ -8,7 +8,6 @@
 #include <arch/bsp/bcm2835_irq.h>
 #include <kernel/kprintf.h>
 #include <kernel/exceptions.h>
-#include <kernel/exc_triggers.h>
 #include <kernel/threads.h>
 #include <kernel/scheduler.h>
 #include <arch/cpu/mmu.h>

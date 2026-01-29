@@ -10,7 +10,6 @@
 #include <kernel/scheduler.h>
 #include <arch/cpu/cpu.h>
 #include <user/main.h>
-#include <kernel/exc_triggers.h>
 #include <user/syscalls.h>
 
 
