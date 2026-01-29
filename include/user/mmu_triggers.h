@@ -1,3 +1,6 @@
+#ifndef MMU_TRIGGERS_H
+#define MMU_TRIGGERS_H
+
 extern char ld_section_kernel_text;
 extern char ld_section_kernel_data_bss;
 
@@ -49,3 +52,5 @@ static inline void read_invalid_addr(void) {
     volatile char var = *((volatile char *)0xFFFFFFFFu);
     (void)var;
 }
+
+#endif
