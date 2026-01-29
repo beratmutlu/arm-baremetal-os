@@ -24,7 +24,7 @@ void threads_init(void) {
 
     for (int i = 0; i < THREADS_MAX_COUNT; i++) {
         thread_t *thread = &thread_table[i];
-
+        memset(&thread->ctx, 0, sizeof(thread->ctx));
         thread->tid = (uint32_t)i;
         thread->state = THREAD_ZOMBIE;
 
@@ -37,9 +37,6 @@ void threads_init(void) {
         thread->stack = (uint8_t *)(uintptr_t)THREADS_STACK_BASE(i);
         thread->stack_size = THREADS_STACK_SIZE;
         thread->ctx.sp = (uint32_t)(uintptr_t)(thread->stack + thread->stack_size);
-
-
-        memset(&thread->ctx, 0, sizeof(thread->ctx));
 
         thread->next_free = free_list;
         free_list = thread;

@@ -3,7 +3,6 @@
 #include <stddef.h>
 
 #include <arch/cpu/mmu.h>
-#include <arch/bsp/uart.h>
 #include <kernel/panic.h>
 #include <kernel/diagnose_mmu.h>
 #include <kernel/threads.h>
