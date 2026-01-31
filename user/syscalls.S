@@ -4,7 +4,6 @@
 
 #include <user/syscalls.h>
 
-/* user/syscalls.S */
 /* 
  * Syscall Calling Convention:
  * 
@@ -23,6 +22,7 @@
 .global syscall_putc
 .global syscall_undefined
 .global syscall_sleep
+.global syscall_vprintf
 
 syscall_exit:
 	mov r7, #SYSCALL_ID_EXIT
@@ -46,6 +46,11 @@ syscall_putc:
 
 syscall_sleep:
 	mov r7, #SYSCALL_ID_SLEEP
+	svc #0
+	bx 	lr
+
+syscall_vprintf:
+	mov r7, #SYSCALL_ID_VPRINTF
 	svc #0
 	bx 	lr
 

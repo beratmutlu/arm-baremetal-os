@@ -10,11 +10,7 @@
 #include <stddef.h>
 
 
-/**
- * @brief Adapter from kvprintf's kputc_fn to the UART driver.
- * Forwards a single character to @ref uart_putc. @p ctx is unused for now.
- */
-static void uart_putc_adapter(char c, void *ctx) {
+void uart_putc_adapter(char c, void *ctx) {
     (void)ctx;
     uart_putc(c);
 }

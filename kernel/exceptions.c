@@ -11,7 +11,8 @@
 #include <arch/cpu/cpu.h>
 #include <user/main.h>
 #include <user/syscalls.h>
-
+#include <stdarg.h>
+#include <lib/kvprintf.h>
 
 extern char ld_section_kernel_text;
 extern char ld_section_user_text;
@@ -82,6 +83,13 @@ void svc_handler_c(struct exc_frame *frame) {
         break;
     }
 
+    case SYSCALL_ID_VPRINTF: {
+        const char *fmt = (const char *)frame->r[0];
+        va_list *ap = (va_list *)frame->r[1];
+        kvprintf(uart_putc_adapter, NULL, fmt, *ap);
+        break;
+    }
+    
     case SYSCALL_ID_UND: {
         print_exception_infos(EXC_SVC, frame);
         scheduler_on_thread_exit(frame);

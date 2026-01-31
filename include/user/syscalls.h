@@ -27,11 +27,14 @@
 /** Syscall ID: undefined syscall*/
 #define SYSCALL_ID_UND           6
 
+#define SYSCALL_ID_VPRINTF       8
 
 #ifndef __ASSEMBLER__
 
 /** GPR index containing the syscall ID for the handler */
 #define SYSCALL_ID_REG           7   
+
+#include <stdarg.h>
 
 /**
  * Terminate the current thread.
@@ -57,6 +60,9 @@ void syscall_putc(char c);
  * Sleep for at least the given number of cycles.
  */
 void syscall_sleep(unsigned int cycles);
+
+
+void syscall_vprintf(const char *fmt, va_list *ap);
 
 /**
  * An undefined syscall.

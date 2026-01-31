@@ -11,6 +11,14 @@
 #ifndef KPRINTF_H
 #define KPRINTF_H
 
+
+/**
+ * @brief Adapter from kvprintf's kputc_fn to the UART driver.
+ * Forwards a single character to @ref uart_putc. @p ctx is unused for now.
+ */
+void uart_putc_adapter(char c, void *ctx);
+
+
 /**
  * @brief Print a formatted message to the serial console.
  *
