@@ -234,6 +234,33 @@ void scheduler_on_timer(struct exc_frame *frame) {
     if (prev != next) {
     }
 }
+
+void scheduler_yield(struct exc_frame *frame) {
+    thread_t *prev = current_thread;
+
+    if (current_thread && current_thread->state == THREAD_RUNNING) {
+        save_context_from_frame(frame, current_thread);
+        if (!current_thread->is_idle) {
+            current_thread->state = THREAD_READY;
+            scheduler_enqueue_ready(current_thread);
+        }
+    }
+
+    thread_t *next = scheduler_pick_next();
+    if (!next) {
+        next = idle_thread;
+    }
+
+    current_thread = next;
+    current_thread->state = THREAD_RUNNING;
+
+    if (next->asid != AS_INVALID && next->asid != prev->asid) {
+        mmu_as_switch(next->asid);
+    }
+
+    restore_frame_from_context(current_thread, frame);
+}
+
 void scheduler_on_thread_exit(struct exc_frame *frame) {
     thread_t *zombie = current_thread;
 

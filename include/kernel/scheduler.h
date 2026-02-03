@@ -92,6 +92,11 @@ bool is_io_queue_empty(void);
 void scheduler_update_sleep_q(void);
 
 /**
+ * @brief Yield: put current thread in ready queue and switch to next.
+ */
+void scheduler_yield(struct exc_frame *frame);
+
+/**
  * @brief Block current thread on sleep for a number of cycles.
  *
  * @param frame  Pointer to the live exception frame being used for return.
