@@ -55,6 +55,9 @@ void svc_handler_c(struct exc_frame *frame) {
             break;
         }
         thread_t *curr = scheduler_curr();
+        if (mmu_as_get_refcount(curr->asid) >= 4) {
+            break;  /* AS thread limit reached */
+        }
         mmu_as_addref(curr->asid);
         scheduler_thread_create_in_as(f, args, arg_size, curr->asid);
         scheduler_yield(frame);  /* Let new thread run before parent continues */

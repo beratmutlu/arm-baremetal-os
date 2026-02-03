@@ -65,6 +65,7 @@ void mmu_enable(void);
 uint32_t mmu_as_create(void);
 void mmu_as_addref(uint32_t asid);
 void mmu_as_release(uint32_t asid);
+uint32_t mmu_as_get_refcount(uint32_t asid);
 void mmu_as_switch(uint32_t asid);
 uint32_t mmu_as_get_boot(void);
 

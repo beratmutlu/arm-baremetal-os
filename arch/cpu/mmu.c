@@ -473,6 +473,13 @@ void mmu_as_addref(uint32_t asid) {
     }
 }
 
+uint32_t mmu_as_get_refcount(uint32_t asid) {
+    if (asid < AS_MAX && as_pool[asid].in_use) {
+        return as_pool[asid].refcount;
+    }
+    return 0;
+}
+
 void mmu_as_release(uint32_t asid) {
     if (asid < AS_MAX && as_pool[asid].in_use) {
         if (as_pool[asid].refcount > 0) {
