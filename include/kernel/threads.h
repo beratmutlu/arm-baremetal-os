@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 /** Maximum number of threads (including idle). */
-#define THREADS_MAX_COUNT   32
+#define THREADS_MAX_COUNT   48
 
 /** Stack size per thread in bytes (mapped pages, not “used bytes”). */
 #define THREADS_STACK_SIZE          4096u
