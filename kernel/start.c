@@ -42,7 +42,7 @@ void start_kernel[[noreturn]](void) {
 
     kprintf("=== Betriebssystem gestartet ===\n");
     test_kernel();
-    scheduler_process_create((void (*)(void *))main, NULL, 0);
+    scheduler_thread_create((void (*)(void *))main, NULL, 0);
     scheduler_start();
 
     __builtin_unreachable();

@@ -27,9 +27,6 @@
 /** Syscall ID: undefined syscall*/
 #define SYSCALL_ID_UND           6
 
-/** Syscall ID: create a new process (new address space) */
-#define SYSCALL_ID_CREATE_PROCESS 7
-
 #define SYSCALL_ID_VPRINTF       8
 
 #ifndef __ASSEMBLER__
@@ -48,11 +45,6 @@ void syscall_exit [[noreturn]] (void);
  * Create a new thread starting at f.
  */
 void syscall_create_thread(void (*f) (void *), void * args, unsigned int arg_size);
-
-/**
- * Create a new process starting at f (new address space).
- */
-void syscall_create_process(void (*f) (void *), void * args, unsigned int arg_size);
 
 /**
  * Read one character from input.

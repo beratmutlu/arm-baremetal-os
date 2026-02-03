@@ -4,10 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef uint8_t mmu_asid_t;
-
-#define MMU_AS_MAX_COUNT  8u
-#define MMU_ASID_INVALID  ((mmu_asid_t)0xFFu)
 
 typedef uint32_t l1_entry;
 
@@ -61,17 +57,5 @@ void mmu_setup_protection(void);
 
 
 void mmu_enable(void);
-
-
-mmu_asid_t mmu_as_create(void);
-
-
-void mmu_as_retain(mmu_asid_t asid);
-
-
-void mmu_as_release(mmu_asid_t asid);
-
-
-void mmu_switch_as(mmu_asid_t asid);
 
 #endif /* MMU_H */

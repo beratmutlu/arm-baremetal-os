@@ -10,7 +10,6 @@
 #include <lib/list.h>
 #include <kernel/exc_frame_layout.h>
 #include <stdbool.h>
-#include <arch/cpu/mmu.h>
 
 /** Maximum number of threads (including idle). */
 #define THREADS_MAX_COUNT   32
@@ -70,7 +69,6 @@ struct thread {
     bool is_idle;                               /**< True iff this is the idle thread */
     bool in_runq;                               /**< True iff currently enqueued in ready queue */
     int sleep_cycles_left;                      /**< Number of cycles left in sleep queue */
-    mmu_asid_t asid;                            /**< Address space ID (MMU_ASID_INVALID for kernel threads) */
 };
 
 /**

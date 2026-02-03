@@ -18,7 +18,6 @@
  
 .global syscall_exit
 .global syscall_create_thread
-.global syscall_create_process
 .global syscall_getc
 .global syscall_putc
 .global syscall_undefined
@@ -32,11 +31,6 @@ syscall_exit:
 
 syscall_create_thread:
 	mov r7,	#SYSCALL_ID_CREATE
-	svc #0
-	bx	lr
-
-syscall_create_process:
-	mov r7, #SYSCALL_ID_CREATE_PROCESS
 	svc #0
 	bx	lr
 
