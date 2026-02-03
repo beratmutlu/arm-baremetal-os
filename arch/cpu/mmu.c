@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <arch/cpu/mmu.h>
 #include <kernel/panic.h>
@@ -89,6 +90,33 @@ typedef struct l2_table_aligned {
 static l2_table_t l2_stack_tables[THREADS_MAX_COUNT];
 static l2_table_t l2_boot_region;
 
+#define MMU_USER_DATA_TEMPLATE_WIN_BASE 0x00800000u
+#define MMU_USER_DATA_SCRATCH_WIN_BASE  0x00900000u
+
+/**
+ * Address spaces use a single shared L1; user .data/.bss is mapped via per-AS L2 tables.
+ * New address spaces are initialized by copying from a template window into a scratch window.
+ * TLBs are fully invalidated on AS switch; caches remain disabled.
+ */
+typedef struct mmu_as {
+    bool in_use;
+    uint32_t refcount;
+    uint32_t data_bss_phys_base;
+    l2_table_t data_l2;
+} mmu_as_t;
+
+static mmu_as_t   as_table[MMU_AS_MAX_COUNT];
+static l2_table_t l2_user_data_template;
+static l2_table_t l2_user_data_scratch;
+static mmu_asid_t current_asid = MMU_ASID_INVALID;
+static uint32_t   user_data_bss_start = 0u;
+static uint32_t   user_data_bss_end = 0u;
+static uint32_t   user_data_bss_size = 0u;
+static uint32_t   user_data_bss_pages = 0u;
+static uint32_t   user_data_section_base = 0u;
+static uint32_t   user_data_section_offset = 0u;
+static uint32_t   as_phys_next = 0u;
+
 #define KERNEL_GUARD_L2_MAX_SECTIONS  4u
 
 static l2_table_t l2_kernel_guard_tables[KERNEL_GUARD_L2_MAX_SECTIONS];
@@ -97,6 +125,10 @@ static uint32_t   l2_kernel_guard_sec_count = 0u;
 
 static inline bool is_aligned_uint(uint32_t addr, uint32_t alignment_bytes) {
     return (addr & MMU_ALIGN_MASK(alignment_bytes)) == 0u;
+}
+
+static inline uint32_t align_up_uint(uint32_t value, uint32_t alignment_bytes) {
+    return (value + MMU_ALIGN_MASK(alignment_bytes)) & ~MMU_ALIGN_MASK(alignment_bytes);
 }
 
 static inline uint32_t encode_ap_bits(enum mmu_permission perm, uint32_t ap01_shift, uint32_t ap2_bit) {
@@ -168,6 +200,12 @@ static void configure_mmu_registers(void) {
 
 l2_entry mmu_l2_fault(void) {
     return 0u;
+}
+
+static void l2_fill_fault(l2_table_t *t) {
+    for (uint32_t i = 0; i < MMU_L2_ENTRIES; i++) {
+        t->e[i] = mmu_l2_fault();
+    }
 }
 
 l2_entry mmu_l2_small_page(void *phy_addr, enum mmu_permission perm, bool xn) {
@@ -365,15 +403,66 @@ static void setup_user_sections(void) {
     const uint32_t user_text_end = (uint32_t)(uintptr_t)&ld_section_user_text_end;
     const uint32_t user_rodata_start = (uint32_t)(uintptr_t)&ld_section_user_rodata;
     const uint32_t user_rodata_end = (uint32_t)(uintptr_t)&ld_section_user_rodata_end;
-    const uint32_t user_data_bss_start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
-    const uint32_t user_data_bss_end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
 
     map_identity_range(user_text_start, user_text_end - user_text_start,
                       PERM_R_R, false, true);
     map_identity_range(user_rodata_start, user_rodata_end - user_rodata_start,
                       PERM_R_R, true, true);
-    map_identity_range(user_data_bss_start, user_data_bss_end - user_data_bss_start,
-                      PERM_FULL_ACCESS, true, true);
+}
+
+static void setup_user_data_as_support(void) {
+    user_data_bss_start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
+    user_data_bss_end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
+
+    if (user_data_bss_end < user_data_bss_start) {
+        panic("MMU: user data/bss bounds invalid");
+    }
+    if (!is_aligned_uint(user_data_bss_start, MMU_SMALL_PAGE_SIZE)) {
+        panic("MMU: user data/bss not 4KiB aligned");
+    }
+    if (!is_aligned_uint(MMU_USER_DATA_TEMPLATE_WIN_BASE, MMU_SECTION_SIZE) ||
+        !is_aligned_uint(MMU_USER_DATA_SCRATCH_WIN_BASE, MMU_SECTION_SIZE)) {
+        panic("MMU: user data windows not 1MiB aligned");
+    }
+
+    user_data_bss_size = user_data_bss_end - user_data_bss_start;
+    user_data_bss_pages = (user_data_bss_size + MMU_ALIGN_MASK(MMU_SMALL_PAGE_SIZE)) >> MMU_SMALL_PAGE_SHIFT;
+    user_data_section_base = user_data_bss_start & ~MMU_ALIGN_MASK(MMU_SECTION_SIZE);
+    user_data_section_offset = user_data_bss_start - user_data_section_base;
+
+    if ((user_data_section_offset + user_data_bss_size) > MMU_SECTION_SIZE) {
+        panic("MMU: user data/bss exceeds 1MiB section");
+    }
+    if (((user_data_section_offset >> MMU_SMALL_PAGE_SHIFT) + user_data_bss_pages) > MMU_L2_ENTRIES) {
+        panic("MMU: user data/bss too large for L2");
+    }
+
+    for (uint32_t i = 0; i < MMU_AS_MAX_COUNT; i++) {
+        as_table[i].in_use = false;
+        as_table[i].refcount = 0u;
+        as_table[i].data_bss_phys_base = 0u;
+        l2_fill_fault(&as_table[i].data_l2);
+    }
+
+    l2_fill_fault(&l2_user_data_template);
+    l2_fill_fault(&l2_user_data_scratch);
+
+    const uint32_t first_idx = user_data_section_offset >> MMU_SMALL_PAGE_SHIFT;
+    for (uint32_t i = 0; i < user_data_bss_pages; i++) {
+        const uint32_t pa = user_data_bss_start + (i * MMU_SMALL_PAGE_SIZE);
+        l2_user_data_template.e[first_idx + i] =
+            mmu_l2_small_page((void *)(uintptr_t)pa, PERM_R_NA, true);
+    }
+
+    mmu_set_l1_entry((void *)(uintptr_t)MMU_USER_DATA_TEMPLATE_WIN_BASE,
+                     mmu_l1_page_table(l2_user_data_template.e));
+    mmu_set_l1_entry((void *)(uintptr_t)MMU_USER_DATA_SCRATCH_WIN_BASE,
+                     mmu_l1_page_table(l2_user_data_scratch.e));
+
+    mmu_set_l1_entry((void *)(uintptr_t)user_data_section_base, mmu_l1_fault());
+
+    as_phys_next = align_up_uint(user_data_bss_end, MMU_SMALL_PAGE_SIZE);
+    current_asid = MMU_ASID_INVALID;
 }
 
 static void setup_thread_stacks(void) {
@@ -392,6 +481,112 @@ static void setup_thread_stacks(void) {
                                                                          true);
         l2_stack_tables[tid].e[THREAD_STACK_GUARD_UPPER_IDX] = mmu_l2_fault();
     }
+}
+
+mmu_asid_t mmu_as_create(void) {
+    mmu_asid_t free_asid = MMU_ASID_INVALID;
+    const uint32_t size_aligned = align_up_uint(user_data_bss_size, MMU_SMALL_PAGE_SIZE);
+
+    for (uint32_t i = 0; i < MMU_AS_MAX_COUNT; i++) {
+        if (!as_table[i].in_use) {
+            free_asid = (mmu_asid_t)i;
+            break;
+        }
+    }
+
+    if (free_asid == MMU_ASID_INVALID) {
+        return MMU_ASID_INVALID;
+    }
+
+    mmu_as_t *as = &as_table[free_asid];
+
+    if (as->data_bss_phys_base == 0u) {
+        const uint64_t end = (uint64_t)as_phys_next + (uint64_t)size_aligned;
+        if (end > MMU_USABLE_RAM_SIZE_BYTES) {
+            return MMU_ASID_INVALID;
+        }
+        as->data_bss_phys_base = as_phys_next;
+        as_phys_next += size_aligned;
+    }
+
+    as->in_use = true;
+    as->refcount = 1u;
+
+    l2_fill_fault(&as->data_l2);
+    const uint32_t first_idx = user_data_section_offset >> MMU_SMALL_PAGE_SHIFT;
+    for (uint32_t i = 0; i < user_data_bss_pages; i++) {
+        const uint32_t pa = as->data_bss_phys_base + (i * MMU_SMALL_PAGE_SIZE);
+        as->data_l2.e[first_idx + i] =
+            mmu_l2_small_page((void *)(uintptr_t)pa, PERM_FULL_ACCESS, true);
+    }
+
+    l2_fill_fault(&l2_user_data_scratch);
+    for (uint32_t i = 0; i < user_data_bss_pages; i++) {
+        const uint32_t pa = as->data_bss_phys_base + (i * MMU_SMALL_PAGE_SIZE);
+        l2_user_data_scratch.e[first_idx + i] =
+            mmu_l2_small_page((void *)(uintptr_t)pa, PERM_RW_NA, true);
+    }
+
+    synchronize_mmu_state();
+
+    if (size_aligned > 0u) {
+        uint8_t *dst = (uint8_t *)(uintptr_t)(MMU_USER_DATA_SCRATCH_WIN_BASE + user_data_section_offset);
+        const uint8_t *src = (const uint8_t *)(uintptr_t)(MMU_USER_DATA_TEMPLATE_WIN_BASE + user_data_section_offset);
+        if (user_data_bss_size > 0u) {
+            memcpy(dst, src, user_data_bss_size);
+        }
+        if (size_aligned > user_data_bss_size) {
+            memset(dst + user_data_bss_size, 0, size_aligned - user_data_bss_size);
+        }
+    }
+
+    return free_asid;
+}
+
+void mmu_as_retain(mmu_asid_t asid) {
+    if (asid >= MMU_AS_MAX_COUNT) {
+        return;
+    }
+    if (!as_table[asid].in_use) {
+        return;
+    }
+    as_table[asid].refcount++;
+}
+
+void mmu_as_release(mmu_asid_t asid) {
+    if (asid >= MMU_AS_MAX_COUNT) {
+        return;
+    }
+    mmu_as_t *as = &as_table[asid];
+    if (!as->in_use) {
+        return;
+    }
+    if (as->refcount > 0u) {
+        as->refcount--;
+    }
+    if (as->refcount == 0u) {
+        as->in_use = false;
+        if (current_asid == asid) {
+            current_asid = MMU_ASID_INVALID;
+        }
+    }
+}
+
+void mmu_switch_as(mmu_asid_t asid) {
+    if (asid >= MMU_AS_MAX_COUNT) {
+        return;
+    }
+    if (!as_table[asid].in_use) {
+        return;
+    }
+    if (asid == current_asid) {
+        return;
+    }
+
+    mmu_set_l1_entry((void *)(uintptr_t)user_data_section_base,
+                     mmu_l1_page_table(as_table[asid].data_l2.e));
+    current_asid = asid;
+    synchronize_mmu_state();
 }
 
 void mmu_init(void) {
@@ -417,6 +612,7 @@ void mmu_setup_protection(void) {
     setup_kernel_sections();
     setup_kernel_stack_guards();
     setup_user_sections();
+    setup_user_data_as_support();
 
     map_identity_range(MMU_PERIPH_BASE, MMU_PERIPH_SIZE_BYTES,
                       PERM_RW_NA, true, true);

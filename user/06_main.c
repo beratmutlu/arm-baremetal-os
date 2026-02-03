@@ -1,5 +1,6 @@
 #include <config.h>
 #include <user/uprintf.h>
+#include <user/syscalls.h>
 
 volatile char global_char;
 volatile int global_counter = 100;

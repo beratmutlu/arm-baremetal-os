@@ -48,6 +48,15 @@ void scheduler_on_timer(struct exc_frame *frame);
 void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size);
 
 /**
+ * @brief Create a new user process (new address space) and enqueue it.
+ *
+ * @param func     User-mode entry function.
+ * @param arg      Optional argument blob (may be NULL).
+ * @param arg_size Size of argument blob in bytes.
+ */
+void scheduler_process_create(void (*func)(void *), const void *arg, unsigned arg_size);
+
+/**
  * @brief Thread-exit hook: reap current thread and run next.
  *
  * @param frame Pointer to the live exception frame being used for return.

@@ -10,6 +10,7 @@
 #include <kernel/scheduler.h>
 #include <arch/cpu/banked_regs.h>
 #include <arch/cpu/cpu.h>
+#include <arch/cpu/mmu.h>
 #include <stdint.h>
 #include <kernel/kprintf.h>
 #include <arch/bsp/uart.h>
@@ -36,6 +37,15 @@ static thread_t *node_to_thread(list_node *node) {
 
 static thread_t *idle_thread = NULL;
 static thread_t *current_thread = NULL;
+
+static inline void scheduler_switch_address_space(const thread_t *thread) {
+    if (!thread || thread->is_idle) {
+        return;
+    }
+    if (thread->asid != MMU_ASID_INVALID) {
+        mmu_switch_as(thread->asid);
+    }
+}
 
 /**
  * Scheduler ready queue (FIFO).
@@ -143,6 +153,7 @@ void scheduler_start(void) {
     }
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
+    scheduler_switch_address_space(current_thread);
 
     struct exc_frame frame = {0};
     restore_frame_from_context(current_thread, &frame);
@@ -152,12 +163,14 @@ void scheduler_start(void) {
 
 static thread_t *scheduler_thread_create_helper(void (*func)(void *),
                                                 const void *arg,
-                                                unsigned arg_size)
+                                                unsigned arg_size,
+                                                mmu_asid_t asid)
 {
     thread_t *thread = thread_alloc();
     if (!thread) return NULL;
 
     memset(&thread->ctx, 0, sizeof(thread->ctx));
+    thread->asid = asid;
 
     uint8_t *sp8 = thread->stack + thread->stack_size;
     sp8 = (uint8_t *)((uintptr_t)sp8 & ~0x7); 
@@ -183,16 +196,39 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *),
 
 
 void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size) {
-    thread_t *thread = scheduler_thread_create_helper(func, arg, arg_size);
+    thread_t *curr = scheduler_curr();
+    if (!curr || curr->is_idle || curr->asid == MMU_ASID_INVALID) {
+        kprintf("Could not create thread: no current user address space.\n");
+        return;
+    }
+    mmu_as_retain(curr->asid);
+    thread_t *thread = scheduler_thread_create_helper(func, arg, arg_size, curr->asid);
     if (!thread) {
+        mmu_as_release(curr->asid);
         kprintf("Could not create thread.\n");
         return;
     }
     scheduler_enqueue_ready(thread);
 }
 
+void scheduler_process_create(void (*func)(void *), const void *arg, unsigned arg_size) {
+    mmu_asid_t asid = mmu_as_create();
+    if (asid == MMU_ASID_INVALID) {
+        kprintf("Could not create process.\n");
+        return;
+    }
+
+    thread_t *thread = scheduler_thread_create_helper(func, arg, arg_size, asid);
+    if (!thread) {
+        mmu_as_release(asid);
+        kprintf("Could not create process.\n");
+        return;
+    }
+    scheduler_enqueue_ready(thread);
+}
+
 void scheduler_init(void) {
-    idle_thread = scheduler_thread_create_helper(idle_func, NULL, 0);
+    idle_thread = scheduler_thread_create_helper(idle_func, NULL, 0, MMU_ASID_INVALID);
     idle_thread->is_idle = true;
     idle_thread->ctx.psr = KERNEL_MODE_PSR_IRQ_ENABLE;
 }
@@ -216,6 +252,7 @@ void scheduler_on_timer(struct exc_frame *frame) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
 
+    scheduler_switch_address_space(current_thread);
     restore_frame_from_context(current_thread, frame);
 
     if (prev != next) {
@@ -234,9 +271,13 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
     current_thread->state = THREAD_RUNNING;
     
     if (!zombie->is_idle) {
+        if (zombie->asid != MMU_ASID_INVALID) {
+            mmu_as_release(zombie->asid);
+        }
         thread_free(zombie);
     }
 
+    scheduler_switch_address_space(current_thread);
     restore_frame_from_context(current_thread, frame);
 }
 
@@ -256,6 +297,7 @@ void scheduler_blocked_on_io(struct exc_frame *frame) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
 
+    scheduler_switch_address_space(current_thread);
     restore_frame_from_context(current_thread, frame);
 }
 
@@ -291,6 +333,7 @@ void scheduler_blocked_on_sleep(struct exc_frame *frame, unsigned cycles) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
 
+    scheduler_switch_address_space(current_thread);
     restore_frame_from_context(current_thread, frame);
 
 }

@@ -57,6 +57,19 @@ void svc_handler_c(struct exc_frame *frame) {
         break;
     }
 
+    case SYSCALL_ID_CREATE_PROCESS: {
+        void (*f)(void *) = (void (*)(void *))(uintptr_t)frame->r[0];
+        void *args        = (void *)(uintptr_t)frame->r[1];
+        unsigned arg_size = (unsigned)frame->r[2];
+
+        if (!f || arg_size > 4000) {
+            scheduler_on_thread_exit(frame);
+            break;
+        }
+        scheduler_process_create(f, args, arg_size);
+        break;
+    }
+
     case SYSCALL_ID_GETC: {
         if (!is_ring_empty()) {
             char c = uart_getc();
