@@ -151,37 +151,7 @@ void irq_handler_c(struct exc_frame *frame) {
     uint32_t pending1 = irqctrl_pending1();
     
     uart_irq_service_rx();
-    if (!is_ring_empty()){
-        char c = ring_peek();
 
-        if (c == 'N' || c == 'P' || c == 'C' || c == 'U' || c == 'X') {
-            uart_getc();  /* consume the character */
-            volatile char dummy = 0;
-                
-            switch (c) {
-                case 'N':
-                    dummy = *((volatile char *)NULL);
-                    break;
-
-                case 'P':
-                    ((void (*)(void))NULL)();
-                    break;    
-                    
-                case 'C':
-                    *((volatile char *)&ld_section_kernel_text) = dummy;
-                    break;
-                        
-                case 'U':
-                    dummy = *((volatile char *)0xFFFFFFFFu);
-                    break;
-
-                case 'X':
-                    ((void (*)(void))&ld_section_user_text)();
-                    break;
-            }
-            (void)dummy;
-        }
-    }
     bool woke_up = false; 
     while (!is_io_queue_empty() && !is_ring_empty()) {
         scheduler_wake_blocked_on_io(uart_getc());
