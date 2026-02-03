@@ -46,7 +46,7 @@ extern char ld_section_user_data_bss_end;
 extern char ld_section_init_start;
 extern char ld_section_init_end;
 
-#define MMU_USABLE_RAM_SIZE_BYTES   (128u * 1024u * 1024u)
+
 #define MMU_PERIPH_BASE             0x3F000000u
 #define MMU_PERIPH_SIZE_BYTES       (16u * 1024u * 1024u)
 #define MMU_ALIGN_MASK(sz)          ((sz) - 1u)
