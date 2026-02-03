@@ -27,6 +27,8 @@
 *.so.*
 *.dylib
 
+.github
+
 # Executables
 *.exe
 *.out
