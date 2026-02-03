@@ -64,7 +64,6 @@ und_tramp:
 svc_tramp:
     SUB     LR, LR, #4
     EXC_ENTRY
-    CPSIE   I
     MOV     R0, SP
     BL      svc_handler_c
     EXC_EXIT 0

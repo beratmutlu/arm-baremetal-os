@@ -10,6 +10,7 @@
 #include <kernel/scheduler.h>
 #include <arch/cpu/banked_regs.h>
 #include <arch/cpu/cpu.h>
+#include <arch/cpu/mmu.h>
 #include <stdint.h>
 #include <kernel/kprintf.h>
 #include <arch/bsp/uart.h>
@@ -144,6 +145,8 @@ void scheduler_start(void) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
 
+    mmu_as_switch(current_thread->asid);
+
     struct exc_frame frame = {0};
     restore_frame_from_context(current_thread, &frame);
 
@@ -178,23 +181,29 @@ static thread_t *scheduler_thread_create_helper(void (*func)(void *),
     thread->ctx.psr = USER_MODE_PSR;
 
     thread->state = THREAD_READY;
+    thread->asid = AS_INVALID;
     return thread;
 }
 
-
-void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size) {
+void scheduler_thread_create_in_as(void (*func)(void *), const void *arg, unsigned arg_size, uint32_t asid) {
     thread_t *thread = scheduler_thread_create_helper(func, arg, arg_size);
     if (!thread) {
         kprintf("Could not create thread.\n");
         return;
     }
+    thread->asid = asid;
     scheduler_enqueue_ready(thread);
+}
+
+void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size) {
+    scheduler_thread_create_in_as(func, arg, arg_size, mmu_as_get_boot());
 }
 
 void scheduler_init(void) {
     idle_thread = scheduler_thread_create_helper(idle_func, NULL, 0);
     idle_thread->is_idle = true;
     idle_thread->ctx.psr = KERNEL_MODE_PSR_IRQ_ENABLE;
+    idle_thread->asid = AS_INVALID;
 }
 
 void scheduler_on_timer(struct exc_frame *frame) {
@@ -216,6 +225,10 @@ void scheduler_on_timer(struct exc_frame *frame) {
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
 
+    if (next->asid != AS_INVALID && next->asid != prev->asid) {
+        mmu_as_switch(next->asid);
+    }
+
     restore_frame_from_context(current_thread, frame);
 
     if (prev != next) {
@@ -223,6 +236,11 @@ void scheduler_on_timer(struct exc_frame *frame) {
 }
 void scheduler_on_thread_exit(struct exc_frame *frame) {
     thread_t *zombie = current_thread;
+
+    if (zombie->asid != AS_INVALID) {
+        mmu_as_release(zombie->asid);
+    }
+
     zombie->state = THREAD_ZOMBIE;
 
     thread_t *next = scheduler_pick_next();
@@ -232,6 +250,8 @@ void scheduler_on_thread_exit(struct exc_frame *frame) {
 
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
+
+    mmu_as_switch(next->asid);
     
     if (!zombie->is_idle) {
         thread_free(zombie);
@@ -255,6 +275,8 @@ void scheduler_blocked_on_io(struct exc_frame *frame) {
 
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
+
+    mmu_as_switch(next->asid);
 
     restore_frame_from_context(current_thread, frame);
 }
@@ -290,6 +312,8 @@ void scheduler_blocked_on_sleep(struct exc_frame *frame, unsigned cycles) {
 
     current_thread = next;
     current_thread->state = THREAD_RUNNING;
+
+    mmu_as_switch(next->asid);
 
     restore_frame_from_context(current_thread, frame);
 

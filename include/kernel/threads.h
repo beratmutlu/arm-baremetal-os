@@ -69,6 +69,7 @@ struct thread {
     bool is_idle;                               /**< True iff this is the idle thread */
     bool in_runq;                               /**< True iff currently enqueued in ready queue */
     int sleep_cycles_left;                      /**< Number of cycles left in sleep queue */
+    uint32_t asid;                              /**< Address space ID (AS_INVALID for kernel) */
 };
 
 /**

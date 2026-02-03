@@ -58,4 +58,14 @@ void mmu_setup_protection(void);
 
 void mmu_enable(void);
 
+/* Address space support */
+#define AS_MAX 8u
+#define AS_INVALID (~0u)
+
+uint32_t mmu_as_create(void);
+void mmu_as_addref(uint32_t asid);
+void mmu_as_release(uint32_t asid);
+void mmu_as_switch(uint32_t asid);
+uint32_t mmu_as_get_boot(void);
+
 #endif /* MMU_H */

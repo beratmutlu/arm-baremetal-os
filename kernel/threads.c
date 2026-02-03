@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <kernel/threads.h>
+#include <arch/cpu/mmu.h>
 
 /**
  * @brief Static stack pool.
@@ -33,6 +34,7 @@ void threads_init(void) {
 
         thread->is_idle = false;
         thread->in_runq = false;
+        thread->asid = AS_INVALID;
 
         thread->stack = (uint8_t *)(uintptr_t)THREADS_STACK_BASE(i);
         thread->stack_size = THREADS_STACK_SIZE;
@@ -63,6 +65,7 @@ void thread_free(thread_t *thread) {
     }
     thread->state = (thread_state_t) THREAD_ZOMBIE;
     thread->in_runq = false;
+    thread->asid = AS_INVALID;
     memset(&thread->ctx, 0, sizeof(thread->ctx));
     thread->ctx.sp = (uint32_t) (thread->stack + thread->stack_size);
 

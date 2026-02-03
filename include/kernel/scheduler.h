@@ -48,6 +48,16 @@ void scheduler_on_timer(struct exc_frame *frame);
 void scheduler_thread_create(void (*func)(void *), const void *arg, unsigned arg_size);
 
 /**
+ * @brief Create a new user thread in a specific address space.
+ *
+ * @param func     User-mode entry function.
+ * @param arg      Optional argument blob (may be NULL).
+ * @param arg_size Size of argument blob in bytes.
+ * @param asid     Address space ID to run in.
+ */
+void scheduler_thread_create_in_as(void (*func)(void *), const void *arg, unsigned arg_size, uint32_t asid);
+
+/**
  * @brief Thread-exit hook: reap current thread and run next.
  *
  * @param frame Pointer to the live exception frame being used for return.

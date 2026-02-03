@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <arch/cpu/mmu.h>
 #include <kernel/panic.h>
@@ -94,6 +95,22 @@ static l2_table_t l2_boot_region;
 static l2_table_t l2_kernel_guard_tables[KERNEL_GUARD_L2_MAX_SECTIONS];
 static uint32_t   l2_kernel_guard_sec_base[KERNEL_GUARD_L2_MAX_SECTIONS];
 static uint32_t   l2_kernel_guard_sec_count = 0u;
+
+/* Address space support */
+#define AS_USER_DATA_MAX_SIZE (64u * 1024u)
+
+typedef struct {
+    bool in_use;
+    uint32_t refcount;
+} as_slot_t;
+
+static as_slot_t as_pool[AS_MAX];
+static l2_table_t l2_user_data_tables[AS_MAX];
+static __attribute__((aligned(4096))) uint8_t as_user_data_phys[AS_MAX][AS_USER_DATA_MAX_SIZE];
+static __attribute__((aligned(4096))) uint8_t as_user_data_template[AS_USER_DATA_MAX_SIZE];
+static uint32_t as_user_data_size;
+static uint32_t as_current = AS_INVALID;
+static uint32_t as_boot_id = AS_INVALID;
 
 static inline bool is_aligned_uint(uint32_t addr, uint32_t alignment_bytes) {
     return (addr & MMU_ALIGN_MASK(alignment_bytes)) == 0u;
@@ -365,15 +382,12 @@ static void setup_user_sections(void) {
     const uint32_t user_text_end = (uint32_t)(uintptr_t)&ld_section_user_text_end;
     const uint32_t user_rodata_start = (uint32_t)(uintptr_t)&ld_section_user_rodata;
     const uint32_t user_rodata_end = (uint32_t)(uintptr_t)&ld_section_user_rodata_end;
-    const uint32_t user_data_bss_start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
-    const uint32_t user_data_bss_end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
 
     map_identity_range(user_text_start, user_text_end - user_text_start,
                       PERM_R_R, false, true);
     map_identity_range(user_rodata_start, user_rodata_end - user_rodata_start,
                       PERM_R_R, true, true);
-    map_identity_range(user_data_bss_start, user_data_bss_end - user_data_bss_start,
-                      PERM_FULL_ACCESS, true, true);
+    /* user .data+.bss is mapped per-address-space via L2 tables */
 }
 
 static void setup_thread_stacks(void) {
@@ -410,13 +424,103 @@ void mmu_init(void) {
     check_mmu_1_to_1(l1_page_table);
 }
 
+/* Save template and initialize AS pool (must be called while 1:1 mapped) */
+static void as_init_template(void) {
+    const uint32_t start = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
+    const uint32_t end = (uint32_t)(uintptr_t)&ld_section_user_data_bss_end;
+    as_user_data_size = end - start;
+
+    if (as_user_data_size > AS_USER_DATA_MAX_SIZE) {
+        panic("User .data+.bss exceeds max size");
+    }
+
+    memcpy(as_user_data_template, (void *)(uintptr_t)start, as_user_data_size);
+
+    for (uint32_t i = 0; i < AS_MAX; i++) {
+        as_pool[i].in_use = false;
+        as_pool[i].refcount = 0;
+    }
+}
+
+uint32_t mmu_as_create(void) {
+    for (uint32_t i = 0; i < AS_MAX; i++) {
+        if (!as_pool[i].in_use) {
+            as_pool[i].in_use = true;
+            as_pool[i].refcount = 1;
+
+            memcpy(as_user_data_phys[i], as_user_data_template, as_user_data_size);
+
+            for (uint32_t j = 0; j < MMU_L2_ENTRIES; j++) {
+                l2_user_data_tables[i].e[j] = mmu_l2_fault();
+            }
+
+            const uint32_t num_pages = (as_user_data_size + MMU_SMALL_PAGE_SIZE - 1) / MMU_SMALL_PAGE_SIZE;
+            for (uint32_t p = 0; p < num_pages; p++) {
+                l2_user_data_tables[i].e[p] = mmu_l2_small_page(
+                    &as_user_data_phys[i][p * MMU_SMALL_PAGE_SIZE],
+                    PERM_FULL_ACCESS, true);
+            }
+
+            return i;
+        }
+    }
+    return AS_INVALID;
+}
+
+void mmu_as_addref(uint32_t asid) {
+    if (asid < AS_MAX && as_pool[asid].in_use) {
+        as_pool[asid].refcount++;
+    }
+}
+
+void mmu_as_release(uint32_t asid) {
+    if (asid < AS_MAX && as_pool[asid].in_use) {
+        if (as_pool[asid].refcount > 0) {
+            as_pool[asid].refcount--;
+        }
+        if (as_pool[asid].refcount == 0) {
+            as_pool[asid].in_use = false;
+        }
+    }
+}
+
+void mmu_as_switch(uint32_t asid) {
+    if (asid == AS_INVALID || asid == as_current) {
+        return;
+    }
+    if (asid >= AS_MAX || !as_pool[asid].in_use) {
+        return;
+    }
+
+    const uint32_t va = (uint32_t)(uintptr_t)&ld_section_user_data_bss;
+    const uint32_t section_base = va & L1_SECTION_BASE_MASK;
+    mmu_set_l1_entry((void *)(uintptr_t)section_base,
+                     mmu_l1_page_table(l2_user_data_tables[asid].e));
+
+    as_current = asid;
+    synchronize_mmu_state();
+}
+
+uint32_t mmu_as_get_boot(void) {
+    return as_boot_id;
+}
+
 void mmu_setup_protection(void) {
+    as_init_template();  /* Must be called before l1_fill_fault */
+
     l1_fill_fault();
 
     setup_boot_region();
     setup_kernel_sections();
     setup_kernel_stack_guards();
     setup_user_sections();
+
+    /* Create boot address space */
+    as_boot_id = mmu_as_create();
+    if (as_boot_id == AS_INVALID) {
+        panic("Failed to create boot address space");
+    }
+    mmu_as_switch(as_boot_id);
 
     map_identity_range(MMU_PERIPH_BASE, MMU_PERIPH_SIZE_BYTES,
                       PERM_RW_NA, true, true);

@@ -1,59 +1,43 @@
-#include <stddef.h>
 #include <config.h>
+#include <user/uprintf.h>
 #include <user/syscalls.h>
-#include <stdint.h>
-#include <user/mmu_triggers.h>
-#include <user/main.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-static void stackoverflow [[gnu::optimize("-O0")]] (void) {
-	stackoverflow();
-}
-#pragma GCC diagnostic pop
+volatile char global_char;
+volatile int global_counter = 100;
 
-static int user_data = 42;
+static constexpr int COUNTER_LIMIT = 116;
 
-void user_prog(void * arg) {
-	char c = *((char *) arg);
-	test_user(arg);
+void worker(void* arg){
+	int id = *((int*)arg);
+	int local_counter = 0;
+	while (global_counter < COUNTER_LIMIT){
+		global_counter++;
+		local_counter++;
 
-	volatile char var = 'a';
-
-	switch (c) {
-	#pragma GCC diagnostic push 
-	#pragma GCC diagnostic ignored "-Wpedantic"
-     // cppcheck-suppress nullPointer
-	case 'n': var = *((volatile char *) NULL); break; // read from NULL
-	case 'p': ((void (*)(void)) NULL)(); break; // jump to NULL
-	case 'd': read_kernel_data(); break;
-	case 'k': read_kernel_text(); break;
-	case 'K': read_kernel_stack(); break;
-	case 'g': read_mmio(); break;
-	case 'c': *((char *) user_prog) = var; break; // write to user text
-	case 's': stackoverflow(); break;
-	case 'u': read_invalid_addr(); break;
-	case 'x': ((void (*)(void)) &user_data)(); break; // jump to use data
-	#pragma GCC diagnostic pop
-	}
-
-	for(unsigned int i = 0; i < 10; i++) {
-		syscall_putc(c);
-
-		if( c >= 'A' && c <= 'Z') {
-			for(volatile unsigned int j = 0; j < BUSY_WAIT_COUNTER; j++) {}
-		} else {
-			syscall_sleep(2);
-		}
+		uprintf("%c:%i (%i:%i)\n", global_char, global_counter, id, local_counter);
+		syscall_sleep(1);
 	}
 }
 
-void main (void) {
+void worker_thread(void *args){
+	test_user(args);
 
+	char c = *((char*)args);
+	global_char = c;
+	int id1 = 1;
+	int id2 = 2;
+	int id3 = 3;
+
+	syscall_create_thread(&worker, &id1, sizeof(id1));
+	syscall_create_thread(&worker, &id2, sizeof(id2));
+	worker(&id3);
+}
+
+void main(void) {
 	test_user_main();
 
-	while(true){
+	while(true) {
 		char c = syscall_getc();
-		syscall_create_thread(user_prog, &c, sizeof(c));
+		syscall_create_process(worker_thread, &c, sizeof(c));
 	}
 }

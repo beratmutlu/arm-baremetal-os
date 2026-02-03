@@ -9,6 +9,7 @@
 #include <kernel/panic.h>
 #include <kernel/scheduler.h>
 #include <arch/cpu/cpu.h>
+#include <arch/cpu/mmu.h>
 #include <user/main.h>
 #include <user/syscalls.h>
 #include <stdarg.h>
@@ -53,7 +54,26 @@ void svc_handler_c(struct exc_frame *frame) {
             scheduler_on_thread_exit(frame);
             break;
         }
-        scheduler_thread_create(f, args, arg_size);
+        thread_t *curr = scheduler_curr();
+        mmu_as_addref(curr->asid);
+        scheduler_thread_create_in_as(f, args, arg_size, curr->asid);
+        break;
+    }
+
+    case SYSCALL_ID_CREATE_PROCESS: {
+        void (*f)(void *) = (void (*)(void *))(uintptr_t)frame->r[0];
+        void *args        = (void *)(uintptr_t)frame->r[1];
+        unsigned arg_size = (unsigned)frame->r[2];
+
+        if (!f || arg_size > 4000) {
+            scheduler_on_thread_exit(frame);
+            break;
+        }
+        uint32_t new_asid = mmu_as_create();
+        if (new_asid == AS_INVALID) {
+            break;  /* Out of address spaces */
+        }
+        scheduler_thread_create_in_as(f, args, arg_size, new_asid);
         break;
     }
 
