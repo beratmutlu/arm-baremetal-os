@@ -29,6 +29,8 @@
 
 .github
 
+dist/
+
 # Executables
 *.exe
 *.out

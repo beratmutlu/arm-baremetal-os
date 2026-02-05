@@ -59,7 +59,7 @@ void mmu_setup_protection(void);
 void mmu_enable(void);
 
 /* Address space support */
-#define AS_MAX 12u   /* 1 boot AS + 8 user AS */
+#define AS_MAX 12u   /* 1 boot AS + 11 user AS */
 #define AS_INVALID (~0u)
 
 uint32_t mmu_as_create(void);
