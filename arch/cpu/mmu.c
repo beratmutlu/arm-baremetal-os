@@ -59,6 +59,9 @@ extern char ld_section_init_end;
 #define L1_SECTION_AP2_BIT          (1u << 15)
 #define L1_SECTION_PXN_BIT          (1u << 0)
 
+#define DOMAIN_BITS   4u
+#define DOMAIN_MASK   ((1u << DOMAIN_BITS) - 1u)   // 0xFu
+
 #define L1_DESC_TYPE_PAGE_TABLE     0x1u
 #define L1_PAGE_TABLE_BASE_MASK     0xFFFFFC00u
 #define L1_PAGE_TABLE_DOMAIN_SHIFT  5u
@@ -218,7 +221,7 @@ l1_entry mmu_l1_page_table(void *l2_table) {
     uint32_t desc = 0u;
     desc |= (addr & L1_PAGE_TABLE_BASE_MASK);
     desc |= L1_DESC_TYPE_PAGE_TABLE;
-    desc |= ((domain & 0xFu) << L1_PAGE_TABLE_DOMAIN_SHIFT);
+    desc |= ((domain & DOMAIN_MASK) << L1_PAGE_TABLE_DOMAIN_SHIFT);
 
     return desc;
 }
@@ -249,7 +252,7 @@ l1_entry mmu_l1_section(void *phy_addr, enum mmu_permission perm, bool xn, bool 
     uint32_t desc = 0u;
     desc |= (pa & L1_SECTION_BASE_MASK);
     desc |= L1_DESC_TYPE_SECTION;
-    desc |= ((domain & 0xFu) << L1_SECTION_DOMAIN_SHIFT);
+    desc |= ((domain & DOMAIN_MASK) << L1_SECTION_DOMAIN_SHIFT);
     desc |= section_ap_bits(perm);
 
     if (xn) {
